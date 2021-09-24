@@ -126,7 +126,7 @@ I recommend you install into the virtualenv the dev-requirements
 
 `(default)$ pip install -R /usr/lib/ckan/default/src/ckan/dev-requirements.txt`
 
-This might help further
+This might helps further
 
 ## RUN
 
