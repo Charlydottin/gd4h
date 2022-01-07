@@ -1,35 +1,49 @@
 import React from 'react';
 
-import {
-  Col, Toggle,
-} from '@dataesr/react-dsfr';
+class Toggle extends React.Component {
+constructor(props) {
+  super(props);
+  this.state = {isToggleOn: true};
 
-const ToggleExample = () => (
+  // This binding is necessary to make `this` work in the callback    
+  this.handleClick = this.handleClick.bind(this);  }
+
+handleClick(){    
+  console.log(this.state);  
+  this.setState(prevState => ({      isToggleOn: !prevState.isToggleOn    }));  
+  }
+render() {
+  return (
+    <div class="fr-form-group sm">
+    <fieldset class="fr-fieldset">
+        <legend class="fr-fieldset__legend fr-text--regular" id='radio-legend'>
+            Changer de langue:
+        </legend>
+        <div class="fr-fieldset__content">
+            <div class="fr-radio-group">
+                <input type="radio" id="radio-1" name="radio" checked />
+                <label class="fr-label" for="radio-1">Français
+                </label>
+            </div>
+            <div class="fr-radio-group">
+                <input type="radio" id="radio-2" name="radio" />
+                <label class="fr-label" for="radio-2">Anglais
+                </label>
+            </div>
+            
+        </div>
+    </fieldset>
+    </div>
+    
+  );
+};
+}
+
+const ChangeLang = () => (
   <>
-    <Col>
-      <Toggle
-        onChange={() => { }}
-        disabled
-        checked
-        label="Toggle Label"
-        description="Toggle descirption"
-      />
-    </Col>
-    <Col>
-      <Toggle
-        onChange={() => { }}
-        label="Toggle Label"
-        description="Toggle descirption"
-      />
-    </Col>
-    <Col>
-      <Toggle
-        toggleColor="#f66"
-        label="Toggle Colored Label"
-        description="Toggle description"
-      />
-    </Col>
+      
+      <Toggle/>
+      
   </>
-);
-
-export default ToggleExample;
+    )
+export default ChangeLang;

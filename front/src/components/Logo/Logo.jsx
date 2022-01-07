@@ -5,10 +5,10 @@ import {
 } from '@dataesr/react-dsfr';
 
 const LogoExample = () => (
-  <Col>
-    <Col>
-      <Logo>Test Bloc Marque</Logo>
-    </Col>
+  <Col n="5">
+    
+      <Logo>Commissariat Général au Développement Durable</Logo>
+    
   </Col>
 );
 

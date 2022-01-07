@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
-import ChangeLang from '../Toggle/Toggle';
+// import ChangeLang from '../components/Toggle/Toggle';
 import {
   Header,
   HeaderOperator,
@@ -25,10 +25,7 @@ import {
 
 // import logo from './culture-logo.png'
 
-const HeaderGD4H = () => {
-  const appName = "Green Data For Health";
-  const orgName = "Ministère de la Transition Ecologique";
-  const appdescription = "Portail de jeux de données en Santé-Environnement";
+const MyHeader = () => {
   const location = useLocation();
   const theme = useTheme();
   const [path, setPath] = useState(() => location.pathname || '');
@@ -45,32 +42,17 @@ const HeaderGD4H = () => {
       <Header>
         <HeaderBody>
           <HeaderOperator>
-          <Logo splitCharacter={10}>{orgName}</Logo>
+          <Logo splitCharacter={10}>Ministère de la Transition Ecologique</Logo>
           </HeaderOperator> 
           <Service
             asLink={<RouterLink to="/" />}
-            title={appName}
-            description={appdescription}
+            title="Green Data For Health"
+            description="Portail de jeux de données en Santé-Environnement"
           />
           <Tool
             closeButtonLabel="fermer"
           >
-            <ToolItemGroup>
-              
-            <ToolItem>
-              <ChangeLang/>
-              </ToolItem>
-              <ToolItem onClick={() => setIsOpen(true)}>
-                <span
-                  className="fr-fi-theme-fill fr-link--icon-left"
-                  aria-controls="fr-theme-modal"
-                  data-fr-opened={isOpen}
-                >
-                  Paramètres d’affichage
-                </span>
-              </ToolItem>
-            </ToolItemGroup>
-            
+           
           </Tool>
         </HeaderBody>
         <HeaderNav path={path}>
@@ -118,4 +100,4 @@ const HeaderGD4H = () => {
   );
 };
 
-export default HeaderGD4H;
+export default MyHeader;

@@ -24,49 +24,10 @@ const FooterExample = () => {
   return (
     <>
       <Footer>
-        <FooterTop>
-          <FooterTopCategory title="Nom de la catégorie">
-            <FooterLink
-              asLink={<RouterLink to="/myFooterLink" />}
-            >
-              Footer Link Router
-            </FooterLink>
-            <FooterLink href="/">Footer Link</FooterLink>
-            <FooterLink href="/">Footer Link</FooterLink>
-            <FooterLink href="/">Footer Link</FooterLink>
-            <FooterLink href="/">Footer Link</FooterLink>
-          </FooterTopCategory>
-          <FooterTopCategory title="Nom de la catégorie">
-            <FooterLink href="/">Footer Link</FooterLink>
-            <FooterLink href="/">Footer Link</FooterLink>
-            <FooterLink href="/">Footer Link</FooterLink>
-            <FooterLink href="/">Footer Link</FooterLink>
-            <FooterLink href="/">Footer Link</FooterLink>
-            <FooterLink href="/">Footer Link</FooterLink>
-          </FooterTopCategory>
-          <FooterTopCategory title="Nom de la catégorie">
-            <FooterLink href="/">Footer Link</FooterLink>
-            <FooterLink href="/">Footer Link</FooterLink>
-            <FooterLink href="/">Footer Link</FooterLink>
-            <FooterLink href="/">Footer Link</FooterLink>
-          </FooterTopCategory>
-          <FooterTopCategory title="Nom de la catégorie">
-            <FooterLink href="/">Footer Link</FooterLink>
-            <FooterLink href="/">Footer Link</FooterLink>
-            <FooterLink href="/">Footer Link</FooterLink>
-            <FooterLink href="/">Footer Link</FooterLink>
-          </FooterTopCategory>
-          <FooterTopCategory title="Nom de la catégorie">
-            <FooterLink href="/">Footer Link</FooterLink>
-            <FooterLink href="/">Footer Link</FooterLink>
-            <FooterLink href="/">Footer Link</FooterLink>
-            <FooterLink href="/">Footer Link</FooterLink>
-          </FooterTopCategory>
-        </FooterTop>
         <FooterBody
-          description="Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Uenim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
+          description="Green Data For Health. Action Phare du PNES 4"
         >
-          <Logo>Ministère de l‘enseignement supérieur de la rechercher et de l‘innovation</Logo>
+          <Logo>Ministère de la Transition Ecologique et Solidaire</Logo>
           <FooterBodyItem>
             <Link href="https://legifrance.gouv.fr">
               legifrance.gouv.fr
@@ -88,46 +49,9 @@ const FooterExample = () => {
             </Link>
           </FooterBodyItem>
         </FooterBody>
-        <FooterPartners>
-          <FooterPartnersTitle>Nos partenaires</FooterPartnersTitle>
-          <FooterPartnersLogo
-            isMain
-            href="/"
-            imageSrc="https://dummyimage.com/140x80/000/fff.png&text=main-logo"
-            imageAlt="Logo 1"
-          />
-          <FooterPartnersLogo
-            href="/"
-            imageSrc="https://dummyimage.com/100x80/000/fff.png&text=logo+2"
-            imageAlt="Logo 2"
-          />
-          <FooterPartnersLogo
-            href="/"
-            imageSrc="https://dummyimage.com/100x80/000/fff.png&text=logo+3"
-            imageAlt="Logo 3"
-          />
-          <FooterPartnersLogo
-            href="/"
-            imageSrc="https://dummyimage.com/100x80/000/fff.png&text=logo+4"
-            imageAlt="Logo 4"
-          />
-        </FooterPartners>
+          
         <FooterBottom>
-          <FooterLink href="/">Footer Link</FooterLink>
-          <FooterLink href="/">Footer Link</FooterLink>
-          <FooterLink href="/">Footer Link</FooterLink>
-          <FooterLink href="/">Footer Link</FooterLink>
-          <FooterLink href="/">Footer Link</FooterLink>
-          <FooterLink onClick={() => setIsOpen(true)}>
-            <span
-              className="fr-fi-theme-fill fr-link--icon-left"
-              aria-controls="fr-theme-modal"
-              data-fr-opened={isOpen}
-            >
-              Paramètres d’affichage
-            </span>
-          </FooterLink>
-          <FooterCopy href="/">© République Française 2020</FooterCopy>
+        <FooterCopy href="/">© République Française 2021 - Licence Ouverte Etalab</FooterCopy>
         </FooterBottom>
       </Footer>
       <SwitchTheme isOpen={isOpen} setIsOpen={setIsOpen} />
