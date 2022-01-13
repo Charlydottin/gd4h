@@ -1,0 +1,30 @@
+<li>
+    {{_filter}}
+    <!-- {%if _filter["multiple"]%}
+    <div class="fr-form-group">
+      <fieldset class="fr-fieldset">
+        <legend class="fr-fieldset__legend fr-text--regular" id='checkboxes-legend'>
+            <b>{{_filter["label_en"]}}:</b>
+        </legend>
+        <div class="fr-fieldset__content">
+          {%for val in _filter["values"] %}
+
+          <div class="fr-checkbox-group">
+              <input type="checkbox" id="{{val}}" name="{{val}}">
+              <label class="fr-label" for="{{val}}">{{val}}
+              </label>
+          </div>
+          {%endfor%}
+    {%else%}
+    <div class="fr-select-group">
+      <label class="fr-label" for="select">
+        {{_filter["label_en"]}}
+      </label>
+      <select class="fr-select" id="select" name="select">
+        {%for val in _filter["values"] %}
+        <option value="{{val}}">{{val}}</option>
+        {%endfor%}
+      </select>
+    {%endif%}
+     -->
+  </li>
