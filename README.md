@@ -50,7 +50,48 @@ git clone
 
 ### System requirements
 
-sudo apt-get install -Y git python3 nginx systemd virtualenv mongodb elasticsearch
+sudo apt-get update
+sudo apt install apt-transport-https ca-certificates wget
+sudo apt-get install -Y git python3 nginx systemd virtualenv
 
+
+#### MongoDB
+
+
+wget -qO - https://www.mongodb.org/static/pgp/server-5.0.asc | sudo apt-key add -
+echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/5.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-5.0.list
+
+sudo apt update
+sudo apt-get install -y mongodb-org
+sudo systemctl start mongod
+sudo systemctl status mongod
+sudo systemctl enable mongod
+
+#### ElasticSearch
+
+sudo apt install openjdk-8-jre-headless
+export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/
+wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -
+echo "deb https://artifacts.elastic.co/packages/6.x/apt stable main" | sudo tee /etc/apt/sources.list.d/elasticsearch-6.list
+sudo apt update
+sudo apt install elasticsearch
+sudo systemctl enable --now elasticsearch.service
+curl -X GET "localhost:9200/"
+
+### BACK
+
+cd back
+virtualenv .env
+source .venv/bin/activate
+pip install -r requirement.txt
 
 ### FRONT
+
+cd front/flask_app
+virtualenv .env
+source .venv/bin/activate
+pip install -r requirement.txt
+
+
+## Deploy
+
