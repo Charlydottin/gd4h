@@ -1,0 +1,14 @@
+[Unit]
+Description=GD4H_back
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/home/gd4h-admin/gd4h/back/app
+LimitNOFILE=4096
+ExecStart=/home/gd4h-admin/gd4h/back/.env run gunicorn main:app --workers 2 -k uvicorn.workers.UvicornWorker --bind unix:appname.sock --error-logfile /var/log/GD4H_BACK_error_log.txt
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

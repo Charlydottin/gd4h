@@ -1,0 +1,18 @@
+server {
+    listen [::]:80;
+    listen 80;
+    server_name gd4h.fr;
+    access_log /var/log/nginx/gd4h-front.access.log;
+    error_log /var/log/nginx/gd4h-front.error.log;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+
+    location / {
+        proxy_pass http://unix:/root/gd4h-front/gd4h-front/gd4h.sock;
+        proxy_connect_timeout       75s;
+        proxy_send_timeout          75s;
+        proxy_read_timeout          75s;
+        send_timeout                75s;
+	}
+}
+
