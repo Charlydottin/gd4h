@@ -6,7 +6,6 @@ from pymongo import MongoClient
 from csv import reader, writer, DictReader, DictWriter
 from copy import copy
 from argostranslate import package, translate
-import pymongo
 
 AVAILABLE_LANG = ["fr","en"]
 SWITCH_LANGS = dict(zip(AVAILABLE_LANG,AVAILABLE_LANG[::-1]))
@@ -41,7 +40,7 @@ def translate(text, _from="fr"):
     else:
         return en_fr.translate(text)
     
-data_dir = "../data/"
+data_dir = "../ ../data/"
 metadata_doc = os.path.abspath(os.path.join(data_dir, "meta", "rules.csv"))
 reference_doc = os.path.abspath(os.path.join(data_dir, "meta", "references_tables.csv"))
 
@@ -474,6 +473,6 @@ def translate_datasets():
                     continue
 if __name__ == '__main__':
     init_meta()
-    init_data()
-    translate_datasets()
+    # init_data()
+    # translate_datasets()
     

@@ -1,5 +1,5 @@
 import json 
-from bson import json_util 
+from bson import json_util, ObjectId 
 from fastapi import APIRouter, Body, Request, HTTPException, status
 from fastapi.responses import JSONResponse
 from .models import OrganizationModel, UpdateOrganizationModel, EditOrganizationModel
@@ -17,20 +17,32 @@ router = APIRouter()
 @router.get("/", response_description="List all organizations")
 async def list_organizations(request: Request):
     organizations = []
-    for doc in await request.app.mongodb["organizations"].find({}, {"_id":0}).to_list(length=100):
+    for doc in await request.app.mongodb["organizations"].find({}, {"logs":0}).to_list(length=300):
+        doc["id"] = str(doc["_id"])
         organizations.append(doc)
     return parse_json(organizations)
 
 @router.get("/{id}", response_description="Get a single organization")
 async def show_organizations(id: str, request: Request):
-    if (organization := await request.app.mongodb["organizations"].find_one({"id": id}, {"_id":0, "logs":0})) is not None:
+    if (organization := await request.app.mongodb["organizations"].find_one({"_id":ObjectId(id)}, { "logs":0})) is not None:
         return parse_json(organization)
     raise HTTPException(status_code=404, detail=f"Organization {id} not found")
 
 
+@router.get("/{id}/datasets/", response_description="List datasets belonging to this organization")
+async def show_datasets_organizations(id: str, request: Request):
+    datasets = []
+    for doc in await request.app.mongodb["datasets"].find({"organizations._id":ObjectId(id)}).to_list(length=300):
+        doc["id"] = str(doc["_id"])
+        datasets.append(doc)
+    if len(datasets) == 0:
+        raise HTTPException(status_code=404, detail=f"Organization {id} not found in datasets")
+    else:
+        return parse_json(datasets)
+    
 @router.get("/{name}", response_description="Search a single organization by its name")
 async def search_organizations(name: str, request: Request):
-    if (organization := await request.app.mongodb["organizations"].find_one({"name": {"$regex": name}}, {"_id":0, "logs":0})
+    if (organization := await request.app.mongodb["organizations"].find_one({"name": {"$regex": name}}, {"logs":0})
     ) is not None:
         return {"id":organization["id"], "name": name}
     raise HTTPException(status_code=404, detail=f"Organization '{name}' not found")
@@ -55,13 +67,13 @@ async def partial_update_organization(id: str, request: Request, organization: E
 
         if update_result.modified_count == 1:
             if (
-                updated_organization := await request.app.mongodb["organizations"].find_one({"id": id}, {"_id":0, "logs":0})
+                updated_organization := await request.app.mongodb["organizations"].find_one({"id": id}, {"logs":0})
             ) is not None:
                 return JSONResponse(status_code=status.HTTP_202_ACCEPTED, content=parse_json(updated_organization))
                 # updated_organization
 
     if (
-        existing_organization := await request.app.mongodb["organizations"].find_one({"id": id}, {"_id":0, "logs":0})
+        existing_organization := await request.app.mongodb["organizations"].find_one({"id": id}, { "logs":0})
     ) is not None:
         return JSONResponse(status_code=status.HTTP_304_NOT_MODIFIED, content=parse_json(existing_organization))
 

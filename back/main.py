@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 from pymongo.mongo_client import MongoClient
+from bson.objectid import ObjectId
 from config import settings
 from fastapi import FastAPI
 import uvicorn
+import requests
 from motor.motor_asyncio import AsyncIOMotorClient
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -25,7 +27,7 @@ from fastapi import APIRouter, Body, Request, HTTPException, status
 app = FastAPI()
 
 origins = [
-    "http://localhost:3000",
+    "http://localhost:8000",
 ]
 
 app.add_middleware(
@@ -37,7 +39,6 @@ app.add_middleware(
 )
 app.pymongodb_client = MongoClient(settings.DB_URL)
 
-templates = Jinja2Templates(directory="templates")
 
 @app.on_event("startup")
 async def startup_db_client():
@@ -58,18 +59,41 @@ app.include_router(ref_router, tags=["references"], prefix="/references")
 
 
 app.mount("/static/", StaticFiles(directory="static"), name="static")
-app.mount("/site", StaticFiles(directory="site", html = True), name="site")
+# app.mount("/site", StaticFiles(directory="site", html = True), name="site")
 
+templates = Jinja2Templates(directory="templates")
 
-@app.get("/")
-async def root():
-    response = RedirectResponse(url='/site')
-    return response
+# @app.get("/")
+# async def root():
+#     response = RedirectResponse(url='/site')
+#     return response
 
-# @app.get("/organismes/", response_class=HTMLResponse)
-# async def show_organizations(request: Request):
-#     return templates.TemplateResponse("org.tpl", {"request": request})
+# @app.get("/")
+# async def home(request: Request):
+#     return templates.TemplateResponse("index.html", context={'request': request, 'result': ""})
 
+@app.get("/organization/", response_class=HTMLResponse)
+async def list_organization(request: Request):
+    organizations = []
+    for doc in await request.app.mongodb["organizations"].find({}, {"_id":0}).to_list(length=100):
+        organizations.append(doc)
+    return templates.TemplateResponse("org.html", context={'request': request, 'result': organizations, 'count': len(organizations)})
+
+@app.get("/dataset/", response_class=HTMLResponse)
+async def list_datasets(request: Request):
+    organizations = []
+    for doc in await request.app.mongodb["datasets"].find({}).to_list(length=100):
+        organizations.append(doc)
+    count = await request.app.mongodb["datasets"].count_documents({})
+    return templates.TemplateResponse("dataset.html", context={'request': request, 'result': organizations, 'count': count})
+    
+@app.get("/dataset/{id}", response_class=HTMLResponse)
+async def list_datasets(id:str, request: Request):
+    organizations = []
+    for doc in await request.app.mongodb["datasets"].find({"_id":ObjectId(id)}).to_list(length=100):
+        organizations.append(doc)
+    count = len(organizations)
+    return templates.TemplateResponse("dataset.html", context={'request': request, 'result': organizations, 'count': count})
 
 if __name__ == "__main__":
     uvicorn.run(

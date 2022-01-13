@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from .models import DatasetModel, UpdateDatasetModel
 import json
-from bson import json_util
+from bson import json_util, ObjectId
 
 router = APIRouter()
 
@@ -30,9 +30,14 @@ async def list_datasets(request: Request):
         raise HTTPException(status_code=404, detail=f"No Datasets found")
     return parse_json(organizations)
 
+@router.get("/count", response_description="Count datasets")
+async def list_datasets(request: Request):
+    organizations = await request.app.mongodb["datasets"].count_documents({})
+    return organizations
+
 @router.get("/{id}", response_description="Get a single dataset")
 async def show_dataset(id: str, request: Request):
-    if (dataset := await request.app.mongodb["datasets"].find_one({"id": id}, {"_id": 0})) is not None:
+    if (dataset := await request.app.mongodb["datasets"].find_one({"_id": ObjectId(id)})) is not None:
         return parse_json(dataset)
     raise HTTPException(status_code=404, detail=f"Dataset {id} not found")
 
