@@ -4,7 +4,7 @@ from bson.objectid import ObjectId
 from config import settings
 from fastapi import FastAPI
 import uvicorn
-import requests
+#import requests
 from motor.motor_asyncio import AsyncIOMotorClient
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -16,12 +16,13 @@ from apps.references.routers import router as ref_router
 # from apps.filter.routers import router as translate_router
 
 
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
+# from fastapi.staticfiles import StaticFiles
+# from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse
 from starlette.responses import RedirectResponse
 
 from fastapi import APIRouter, Body, Request, HTTPException, status
+import os
 
 
 app = FastAPI()
@@ -58,42 +59,42 @@ app.include_router(ref_router, tags=["references"], prefix="/references")
 # app.include_router(filter_router, tags=["filter"], prefix="/filter")
 
 
-app.mount("/static/", StaticFiles(directory="static"), name="static")
+#app.mount("/static/", StaticFiles(directory="static"), name="static")
 # app.mount("/site", StaticFiles(directory="site", html = True), name="site")
 
-templates = Jinja2Templates(directory="templates")
+#templates = Jinja2Templates(directory="templates")
 
-# @app.get("/")
-# async def root():
-#     response = RedirectResponse(url='/site')
-#     return response
+@app.get("/")
+async def root():
+    response = RedirectResponse(url='/docs')
+    return response
 
 # @app.get("/")
 # async def home(request: Request):
 #     return templates.TemplateResponse("index.html", context={'request': request, 'result': ""})
 
-@app.get("/organization/", response_class=HTMLResponse)
-async def list_organization(request: Request):
-    organizations = []
-    for doc in await request.app.mongodb["organizations"].find({}, {"_id":0}).to_list(length=100):
-        organizations.append(doc)
-    return templates.TemplateResponse("org.html", context={'request': request, 'result': organizations, 'count': len(organizations)})
+# @app.get("/organization/", response_class=HTMLResponse)
+# async def list_organization(request: Request):
+#     organizations = []
+#     for doc in await request.app.mongodb["organizations"].find({}, {"_id":0}).to_list(length=100):
+#         organizations.append(doc)
+#     return templates.TemplateResponse("org.html", context={'request': request, 'result': organizations, 'count': len(organizations)})
 
-@app.get("/dataset/", response_class=HTMLResponse)
-async def list_datasets(request: Request):
-    organizations = []
-    for doc in await request.app.mongodb["datasets"].find({}).to_list(length=100):
-        organizations.append(doc)
-    count = await request.app.mongodb["datasets"].count_documents({})
-    return templates.TemplateResponse("dataset.html", context={'request': request, 'result': organizations, 'count': count})
+# @app.get("/dataset/", response_class=HTMLResponse)
+# async def list_datasets(request: Request):
+#     organizations = []
+#     for doc in await request.app.mongodb["datasets"].find({}).to_list(length=100):
+#         organizations.append(doc)
+#     count = await request.app.mongodb["datasets"].count_documents({})
+#     return templates.TemplateResponse("dataset.html", context={'request': request, 'result': organizations, 'count': count})
     
-@app.get("/dataset/{id}", response_class=HTMLResponse)
-async def list_datasets(id:str, request: Request):
-    organizations = []
-    for doc in await request.app.mongodb["datasets"].find({"_id":ObjectId(id)}).to_list(length=100):
-        organizations.append(doc)
-    count = len(organizations)
-    return templates.TemplateResponse("dataset.html", context={'request': request, 'result': organizations, 'count': count})
+# @app.get("/dataset/{id}", response_class=HTMLResponse)
+# async def list_datasets(id:str, request: Request):
+#     organizations = []
+#     for doc in await request.app.mongodb["datasets"].find({"_id":ObjectId(id)}).to_list(length=100):
+#         organizations.append(doc)
+#     count = len(organizations)
+#     return templates.TemplateResponse("dataset.html", context={'request': request, 'result': organizations, 'count': count})
 
 if __name__ == "__main__":
     uvicorn.run(
