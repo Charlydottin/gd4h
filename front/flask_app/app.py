@@ -113,21 +113,23 @@ def organization_detail(org_id):
 
 
 @app.route("/references/", methods=["GET"])
-def reference_list(org_id):
-    req_refs = requests.get(f"{API_ROOT_URL}/references")
+def reference_list():
+    print(API_ROOT_URL, )
+    req_refs = requests.get(f"{API_ROOT_URL}/references/")
     references = req_refs.json()
-    return render_template('references.tpl', references=references)
+    print(references)
+    return render_template('references.tpl', references=references, count=len(references))
 
 @app.route("/comments/", methods=["GET"])
 def comment_list():
     req_refs = requests.get(f"{API_ROOT_URL}/comments")
     references = req_refs.json()
-    return render_template('comments.tpl', references=references)
+    return render_template('references.tpl', references=references, count=len(references))
 
 
 if __name__=="__main__":
-    # os.getenv("FRONT_HOST")
-    # os.getenv("FRONT_PORT")
-    # os.getenv("FRONT_DEBUG")
-    # app.run(host=os.getenv("FRONT_HOST"), port=os.getenv("FRONT_PORT"), debug=os.getenv("FRONT_DEBUG"))
+#     # os.getenv("FRONT_HOST")
+#     # os.getenv("FRONT_PORT")
+#     # os.getenv("FRONT_DEBUG")
+#     # app.run(host=os.getenv("FRONT_HOST"), port=os.getenv("FRONT_PORT"), debug=os.getenv("FRONT_DEBUG"))
     app.run(host="localhost", port=8000, debug=True, load_dotenv=True)
