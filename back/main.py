@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from apps.organization.routers import router as org_router
 from apps.dataset.routers import router as dataset_router
 from apps.references.routers import router as ref_router
+from apps.comments.routers import router as comment_router
 # from apps.search.routers import router as search_router
 # from apps.translate.routers import router as translate_router
 # from apps.filter.routers import router as translate_router
@@ -50,6 +51,7 @@ async def shutdown_db_client():
 app.include_router(org_router, tags=["organizations"], prefix="/organizations")
 app.include_router(dataset_router, tags=["datasets"], prefix="/datasets")
 app.include_router(ref_router, tags=["references"], prefix="/references")
+app.include_router(comment_router, tags=["comments"], prefix="/comments")
 # app.include_router(translate_router, tags=["translations"], prefix="/translate")
 # app.include_router(search_router, tags=["search"], prefix="/search")
 # app.include_router(filter_router, tags=["filter"], prefix="/filter")
