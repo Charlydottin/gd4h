@@ -16,7 +16,7 @@ cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 
 
-#API_ROOT_URL = os.getenv("API_ROOT_URL")
+#API_ROOT_URL =  "{}:{}".format(os.getenv("BACK_HOST"), os.getenv('BACK_PORT'))
 API_ROOT_URL="http://127.0.0.1:3000"
 
 def render_template(template_name, **kwargs):
@@ -29,8 +29,6 @@ def render_template(template_name, **kwargs):
 
 @app.route("/")
 def home():
-    # template = jinja_env.get_template('index.html')
-    # return template.render()
     return render_template('index.html')
 
 
@@ -120,21 +118,16 @@ def reference_list(org_id):
     references = req_refs.json()
     return render_template('references.tpl', references=references)
 
-# @app.get("/dataset/", response_class=HTMLResponse)
-# async def list_datasets(request: Request):
-#     organizations = []
-#     for doc in await request.app.mongodb["datasets"].find({}).to_list(length=100):
-#         organizations.append(doc)
-#     count = await request.app.mongodb["datasets"].count_documents({})
-#     return templates.TemplateResponse("dataset.html", context={'request': request, 'result': organizations, 'count': count})
-    
-# @app.get("/dataset/{id}", response_class=HTMLResponse)
-# async def list_datasets(id:str, request: Request):
-#     organizations = []
-#     for doc in await request.app.mongodb["datasets"].find({"_id":ObjectId(id)}).to_list(length=100):
-#         organizations.append(doc)
-#     count = len(organizations)
-#     return templates.TemplateResponse("dataset.html", context={'request': request, 'result': organizations, 'count': count})
+@app.route("/comments/", methods=["GET"])
+def comment_list():
+    req_refs = requests.get(f"{API_ROOT_URL}/comments")
+    references = req_refs.json()
+    return render_template('comments.tpl', references=references)
+
 
 if __name__=="__main__":
-     app.run(host="localhost", port=8000, debug=True, load_dotenv=False)
+    # os.getenv("FRONT_HOST")
+    # os.getenv("FRONT_PORT")
+    # os.getenv("FRONT_DEBUG")
+    # app.run(host=os.getenv("FRONT_HOST"), port=os.getenv("FRONT_PORT"), debug=os.getenv("FRONT_DEBUG"))
+    app.run(host="localhost", port=8000, debug=True, load_dotenv=True)
