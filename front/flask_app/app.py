@@ -5,6 +5,7 @@ import requests
 import jinja2
 from copy import deepcopy
 from flask_cors import CORS, cross_origin
+from os import environ
 
 template_dir = os.path.join(os.path.dirname(__file__),'templates')
 static_dir = os.path.join(os.path.dirname(__file__),'static')
@@ -14,7 +15,9 @@ app = Flask(__name__, static_url_path='/static', template_folder="/templates")
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 
-API_ROOT_URL = "http://127.0.0.1:3000"
+
+#API_ROOT_URL = os.getenv("API_ROOT_URL")
+API_ROOT_URL="http://127.0.0.1:3000"
 
 def render_template(template_name, **kwargs):
     template = jinja_env.get_template(template_name)
@@ -43,7 +46,6 @@ def dataset_list():
     filters = req_filters.json()
     values = {}
     _filters = []
-
     for f in filters:
         if f["slug"] == "organizations":
             req_org = requests.get(API_ROOT_URL+"/organizations/")    
@@ -135,4 +137,4 @@ def reference_list(org_id):
 #     return templates.TemplateResponse("dataset.html", context={'request': request, 'result': organizations, 'count': count})
 
 if __name__=="__main__":
-    app.run(host="localhost", port=8000, debug=True, load_dotenv=False)
+     app.run(host="localhost", port=8000, debug=True, load_dotenv=False)
