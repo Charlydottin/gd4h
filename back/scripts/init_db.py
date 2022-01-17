@@ -7,6 +7,15 @@ from csv import reader, writer, DictReader, DictWriter
 from copy import copy
 from argostranslate import package, translate
 
+data_dir = "../../data/"
+metadata_doc = os.path.abspath(os.path.join(data_dir, "meta", "rules.csv"))
+reference_doc = os.path.abspath(os.path.join(data_dir, "meta", "references_tables.csv"))
+
+
+DATABASE_NAME = "GD4H_V1"
+mongodb_client = MongoClient("mongodb://localhost:27017")
+DB = mongodb_client[DATABASE_NAME]
+
 AVAILABLE_LANG = ["fr","en"]
 SWITCH_LANGS = dict(zip(AVAILABLE_LANG,AVAILABLE_LANG[::-1]))
 installed_languages = translate.get_installed_languages()
@@ -40,14 +49,6 @@ def translate(text, _from="fr"):
     else:
         return en_fr.translate(text)
     
-data_dir = "../ ../data/"
-metadata_doc = os.path.abspath(os.path.join(data_dir, "meta", "rules.csv"))
-reference_doc = os.path.abspath(os.path.join(data_dir, "meta", "references_tables.csv"))
-
-
-DATABASE_NAME = "GD4H_TEST"
-mongodb_client = MongoClient("mongodb://localhost:27017")
-DB = mongodb_client[DATABASE_NAME]
 
 def create_meta_fields():
     coll_name = "meta_fields"
@@ -76,8 +77,9 @@ def create_meta_references():
     DB[coll_name].drop()
     print(f"Creating {coll_name}")
     with open(reference_doc, "r") as f:
-        reader = DictReader(f, delimiter="\t")
+        reader = DictReader(f, delimiter=",")
         for row in reader:
+            print(row)
             if row["tablename"] == "":
                 break
             row["tablename"] = "ref_"+ row["fieldname"]
@@ -96,7 +98,7 @@ def create_ref_tables():
             with open(ref_file, "r") as f:
                 reader = DictReader(f, delimiter=",")
                 for row in reader:
-                    _id = DB[coll_name].insert_one({k.strip(): v.strip() for k,v in row.items()}).inserted_id
+                    _id = DB[coll_name].insert_one({k.strip(): v.strip() for k,v in row.items() if v is not None}).inserted_id
                     # print(_id)
         except FileNotFoundError:
             DB["meta_references"].update_one({"fieldname":ref["fieldname"]}, {"$set":{"status": False, "msg": "No corresponding file references found"}})
@@ -341,9 +343,9 @@ def import_dataset_from_csv():
             dataset["thematic_field"] = {"label_fr":row["thematic_field"], "label_en": None} 
             dataset["nature"] = {"label_fr":row["nature"], "label_en": None}
             dataset["environment"] = {"label_fr":row["environment"], "label_en": None}
-            dataset["subthematic"] = {"label_fr":row["subthematic"], "label_en": None}
-            dataset["exposure_factor_category"] = {"label_fr":row["exposure_factor_category"], "label_en": None}
-            dataset["exposure_factor"]= [{"label_fr":row["exposure_factor_category"].lower(), "label_en": None}]
+            dataset["subthematic"] = [{"label_fr":n.strip(), "label_en": translate(n.strip())} for n in row["subthematic"].split("/")]
+            dataset["exposure_factor_category"] = [{"label_fr":n.strip(), "label_en": translate(n.strip())} for n in row["exposure_factor_category"].split("/")]
+            dataset["exposure_factor"]= [{"label_fr":n.strip(), "label_en": translate(n.strip())} for n in row["exposure_factor_category"].split("/")]
             # TECH
             dataset["has_filter"] = bool(row["filter"])
             dataset["has_search_engine"] = bool(row["search_engine"])
@@ -372,18 +374,17 @@ def import_dataset_from_csv():
             #GEO
             dataset["is_geospatial_data"] = bool(row["geospatial_data"])
             if dataset["is_geospatial_data"]:
-                dataset["geospatial_geographical_coverage"] = row["spatial_geographical_coverage"]
-                dataset["geographical_information_level"] = [{"label_fr":v.strip(), "label_en":None} for v in row["spatial_geographical_coverage"].split("/")]
-                dataset["projection_system"] = [{"label_fr":n.strip(), "label_en":n.strip()} for n in row["projection_system"].split("/")]
+                dataset["administrative_territory_coverage"] = [n.strip() for n in row["administrative_territory_coverage"].split(",")]
+                dataset["geospatial_geographical_coverage"] = row["geographical_geospatial_coverage"].split("+")
+                dataset["geographical_information_level"] = [{"label_fr":v.strip(), "label_en":translate(v.strip())} for v in row["geographical_information_level"].split("/")]
+                dataset["projection_system"] = [n.strip() for n in row["projection_system"].split("/")]
                 dataset["related_geographical_information"] = bool(row["related_geographical_information"])
             dataset["geo_comments"] = [create_comment("c24b", text="Commentaire sur la qualification géographique")]
             
             #TIME
-            dataset["year_start"] = row["year_start"]
-            dataset["year_end"] = row["year_end"] 
-            dataset["year"] = row["year"]
+            dataset["year"] = [n.strip() for n in row["year"].split("-")]
             dataset["temporal_scale"] = [{"label_fr":v.strip(), "label_en":None } for v in row["temporal_scale"].split("/")]
-            dataset["update_frequency"] = {"label_fr":row["update_frequency"], "label_en": None}
+            dataset["update_frequency"] = {"label_fr":row["update_frequency"], "label_en": translate(row["update_frequency"])}
             if row["automatic_update"] == "false":
                 dataset["automatic_update"] = False
             if row["automatic_update"] == "true":
@@ -448,7 +449,7 @@ def translate_datasets():
                         v["label_fr"] = translate(l["label_en"])
                     DB.datasets.update_one({"_id": dataset["_id"]}, {"$set": {k:v}})            
                     continue
-    
+                
             if isinstance(v, list):
                 update = False
                 if k not in ["organizations"]:
@@ -471,8 +472,9 @@ def translate_datasets():
                 if update:
                     DB.datasets.update_one({"_id": dataset["_id"]}, {"$set": {k:v}})            
                     continue
+
 if __name__ == '__main__':
     init_meta()
-    # init_data()
-    # translate_datasets()
-    
+    init_data()
+    translate_datasets()
+    print(DATABASE_NAME, "is_ready")
