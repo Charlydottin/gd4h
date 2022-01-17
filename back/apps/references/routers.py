@@ -14,7 +14,7 @@ router = APIRouter()
 @router.get("/", response_description="List available references")
 async def list_referentials(request: Request):
     referentials = []
-    for doc in await request.app.mongodb["references"].find({}, {"_id":0}).to_list(length=100):
+    for doc in await request.app.mongodb["references"].find().to_list(length=100):
         doc["id"] = str(doc["_id"])
         referentials.append(doc)
     if len(referentials) > 0:
