@@ -32,12 +32,14 @@ def init_data():
     DB.datasets.drop()
     import_dataset_from_csv()
     link_organizations_to_datasets()
+    register_comments_from_datasets()
 
 def init_meta():
     DB.meta_fields.drop()
     create_meta_fields()
     DB.meta_references.drop()
-    create_meta_references()
+    DB.references.drop()
+    create_references()
     create_ref_tables()
     DB.logs.drop()
     DB.users.drop()
@@ -72,8 +74,8 @@ def create_meta_fields():
     pipeline = [ {'$project': {"id": {'$toString': "$_id"}, "_id": 0,"value": 1}}]
     DB[coll_name].aggregate(pipeline)
 
-def create_meta_references():        
-    coll_name = "meta_references"
+def create_references():        
+    coll_name = "references"
     DB[coll_name].drop()
     print(f"Creating {coll_name}")
     with open(reference_doc, "r") as f:
@@ -89,7 +91,7 @@ def create_meta_references():
             
 def create_ref_tables():
     print(f"Creating meta_references")
-    for ref in DB["meta_references"].find({}, {"_id":0}):
+    for ref in DB["references"].find({}, {"_id":0}):
         ref_file =  os.path.join(data_dir, "references", ref["tablename"]+".csv")
         coll_name = ref["tablename"]
         DB[coll_name].drop()
@@ -101,15 +103,15 @@ def create_ref_tables():
                     _id = DB[coll_name].insert_one({k.strip(): v.strip() for k,v in row.items() if v is not None}).inserted_id
                     # print(_id)
         except FileNotFoundError:
-            DB["meta_references"].update_one({"fieldname":ref["fieldname"]}, {"$set":{"status": False, "msg": "No corresponding file references found"}})
+            DB["references"].update_one({"fieldname":ref["fieldname"]}, {"$set":{"status": False, "msg": "No corresponding file references found"}})
             CENSUS_DB = mongodb_client["census"]
             values = CENSUS_DB.datasets.distinct(ref["fieldname"])
             for v in values:
                 _id = DB[coll_name].insert_one({"label_fr":v, "label_en": None, "uri": None}).inserted_id
     pipeline = [ {'$project': {"id": {'$toString': "$_id"}, "_id": 0,"value": 1}}]
-    DB["meta_references"].aggregate(pipeline)
+    DB["references"].aggregate(pipeline)
             
-    errors = DB["meta_references"].find({"status": False})
+    errors = DB["references"].find({"status": False})
     for e in errors:
         print("Error", e)
 
@@ -158,9 +160,10 @@ def register_comment(comment, perimeter, scope, ref_id):
     comment["perimeter"] = perimeter
     comment["scope"] = scope #field
     comment["ref_id"] = ref_id
-    DB.comments.insert(comment)
-    pipeline = [ {'$project': {"id": {'$toString': "$_id"}, "_id": 0,"value": 1}}]
-    DB["comments"].aggregate(pipeline)
+    print(comment)
+    DB.comments.insert_one(comment)
+    # pipeline = [ {'$project': {"id": {'$toString': "$_id"}, "_id": 0,"value": 1}}]
+    # DB["comments"].aggregate(pipeline)
 
 
 
@@ -252,17 +255,6 @@ def get_field_rule(model, slug):
 def get_field_slugs_for_model(model="Dataset"):
     return sorted([n["slug"]for n in DB.meta_fields.find({"model": model}, {"_id":0, "slug":1})])
 
-def find_missing_rules_for_existing_dataset():
-    expected_fields = set(get_field_slugs_for_model(model="Dataset"))
-    CENSUS_DB = mongodb_client["census"]
-    existing_dataset = CENSUS_DB.datasets.find_one({},{"_id":0})
-    existing_fields = set(sorted(existing_dataset.keys()))
-    existing_missing_fields = (existing_fields - expected_fields)
-    print("Missing in Rules", existing_missing_fields)
-    expecting_missing_fields = (expected_fields - existing_fields)
-    print("Missing in Dataset", expecting_missing_fields)
-    #Missing in Rules {'contact_comments', 'organization_ids', 'is_opensource', 'spatial_geographical_coverage'}
-    #Missing in Dataset {'context_comments', 'is_opendata', 'qualification_comments', 'contact_type_comments'}
 
 def format_value_with_declared_datatype(rule, value):
     if rule["datatype"] == "str":
@@ -342,10 +334,11 @@ def import_dataset_from_csv():
             dataset["theme_category"] = {"label_fr":row["theme_category"], "label_en": None}
             dataset["thematic_field"] = {"label_fr":row["thematic_field"], "label_en": None} 
             dataset["nature"] = {"label_fr":row["nature"], "label_en": None}
-            dataset["environment"] = {"label_fr":row["environment"], "label_en": None}
+            dataset["environment"] = [{"label_fr":n.strip(), "label_en": translate(n.strip())} for n in row["environment"].split("/")]
             dataset["subthematic"] = [{"label_fr":n.strip(), "label_en": translate(n.strip())} for n in row["subthematic"].split("/")]
             dataset["exposure_factor_category"] = [{"label_fr":n.strip(), "label_en": translate(n.strip())} for n in row["exposure_factor_category"].split("/")]
-            dataset["exposure_factor"]= [{"label_fr":n.strip(), "label_en": translate(n.strip())} for n in row["exposure_factor_category"].split("/")]
+            # this a simple copy for NOW
+            dataset["exposure_factor"] = dataset["exposure_factor_category"]
             # TECH
             dataset["has_filter"] = bool(row["filter"])
             dataset["has_search_engine"] = bool(row["search_engine"])
@@ -421,6 +414,17 @@ def link_organizations_to_datasets():
         DB.logs.insert_one(log)
     print("Missing orgs ", set(not_found_orgs))
     
+def register_comments_from_datasets():
+    dataset = DB.datasets.find_one()
+    comments_fields =  {key:1 for key in dataset if "comment" in key}
+    comments_fields["_id"] = 1
+    for dataset in DB.datasets.find({}, comments_fields):
+        
+        dataset_id = dataset["_id"]
+        del dataset["_id"]
+        for k,v in dataset.items():
+            for c in v:
+                register_comment(c, "dataset", k, dataset_id)
 
 def translate_datasets():
     
@@ -476,5 +480,4 @@ def translate_datasets():
 if __name__ == '__main__':
     init_meta()
     init_data()
-    translate_datasets()
     print(DATABASE_NAME, "is_ready")
