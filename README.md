@@ -199,3 +199,44 @@ sudo systemctl start gd4h-api.service
 ### FRONT
 
 
+* nginx 
+
+Edit  `/etc/nginx/sites-available/gd4h-front` with sudo privileges
+
+```
+
+server{
+       server_name gd4h gd4h.fr;
+       location / {
+           include proxy_params;
+           proxy_pass http://127.0.0.1:5000;
+       }
+}
+```
+sudo ln -s /etc/nginx/sites-available/gd4h-front /etc/nginx/sites-enabled/
+
+
+sudo systemctl restart nginx.service
+
+
+* Service systemd
+  
+Edit /etc/systemd/system/gd4h-front.service
+
+```
+[Unit]
+Description=Gunicorn instance to serve gd4h-front
+After=network.target
+
+[Service]
+User=gd4h-admin
+Group=www-data
+WorkingDirectory=/home/gd4h-admin/GD4H/front/flask_app
+Environment="PATH=/home/gd4h-admin/GD4H/front/flask_app/.venv/bin"
+ExecStart=/home/gd4h-admin/GD4H/front/flask_app/.venv/bin/gunicorn --bind=127.0.0.1:5000 -w 4 -k uvicorn.workers.UvicornWorker main:app
+
+[Install]
+WantedBy=multi-user.target
+```
+
+`sudo systemctl start gd4h-front.service`
