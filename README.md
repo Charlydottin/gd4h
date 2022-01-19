@@ -28,10 +28,9 @@ Le projet est organisé de la manière suivante:
 │   ├── index.py
 │   ├── __init__.py
 │   ├── main.py
-│   ├── requirements.in
 │   ├── requirements.txt
 │   ├── scripts
-│   ├── static
+│   │   └── init_db.py
 │   └── tests
 ├── data
 │   ├── comments
@@ -114,6 +113,13 @@ sudo systemctl enable --now elasticsearch.service
 curl -X GET "localhost:9200/"
 ```
 
+* Troubleshooting:
+  If fails to connect to port 
+  ```bash
+  sudo chown -r $USER /var/lib/elasticsearch/
+  sudo chown -r $USER /etc/elasticsearch/
+  ```
+  
 #### ArgosTranslate
 ```
 sudo snap install argos-translate
