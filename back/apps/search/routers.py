@@ -28,10 +28,7 @@ DB = mongodb_client[DATABASE_NAME]
 
 router = APIRouter()
 
-@router.get("/")
-async def get_results(q: Optional[str] = Query(None, min_length=3, max_length=50)):
-    print(q)
-    return {"query":q}
+
 
 @router.get("/datasets/{lang}", response_description="Search Full Text in description")
 async def search_datasets(lang:str, q: Optional[str] = Query(None, min_length=3, max_length=50)):
@@ -63,10 +60,6 @@ async def search_datasets(lang:str, q: Optional[str] = Query(None, min_length=3,
         "post_tags" : ["</em>", "</em>"],
         "fields" : {f:{} for f in fields}
         }
-    
-    
-
-    
     res = es.search(index=index_name, query=final_query, highlight=highlight)
     result_count =  res["hits"]["total"]["value"]
     _ids = [r["_id"] for r in res["hits"]["hits"]]
@@ -78,11 +71,14 @@ async def search_datasets(lang:str, q: Optional[str] = Query(None, min_length=3,
     # return {"datasets": [r for r in res["hits"]["hits"]],"count":len(res["hits"]["hits"])}
     
 
-@router.get("/organizations/{lang}", response_description="Search Organization by name or acronym")
-async def search_datasets(request: Request, lang="fr"):    
-    final_q = {"query":{"bool": { "should": {"terms": "name.label_"+{lang}, "terms":"acronym.label_"+lang}}}}
-    res = es.search(index="gd4h_datasets", query=final_q)
-    return {"datasets": [r["_id"] for r in res["hits"]["hits"]],"count":len(res["hits"]["hits"])}
+@router.get("/organizations/", response_description="Search Organization by name or acronym")
+async def search_datasets(request: Request, lang="fr"):  
+    match_orgs= []
+    for doc in await request.app.mongodb["organizations"].find({"$or":[{"acronym": q}, {"name":q}]}, {}).to_list(length=300):  
+        match_orgs.append(doc)
+    # final_q = {"query":{"bool": { "should": {"terms": "name.label_"+{lang}, "terms":"acronym.label_"+lang}}}}
+    # res = es.search(index="gd4h_datasets", query=final_q)
+    return {"organisations": match_orgs,"count":len(match_orgs)}
 
             
             
