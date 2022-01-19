@@ -7,7 +7,11 @@ from csv import reader, writer, DictReader, DictWriter
 from copy import copy
 from argostranslate import package, translate
 
-data_dir = "../../data/"
+curr_dir = os.getcwd()
+# print(curr_dir)
+# parent = os.path.dirname(os.getcwd())
+data_dir = os.path.join(curr_dir, "data")
+print(data_dir)
 metadata_doc = os.path.abspath(os.path.join(data_dir, "meta", "rules.csv"))
 reference_doc = os.path.abspath(os.path.join(data_dir, "meta", "references_tables.csv"))
 
@@ -160,7 +164,6 @@ def register_comment(comment, perimeter, scope, ref_id):
     comment["perimeter"] = perimeter
     comment["scope"] = scope #field
     comment["ref_id"] = ref_id
-    print(comment)
     DB.comments.insert_one(comment)
     # pipeline = [ {'$project': {"id": {'$toString': "$_id"}, "_id": 0,"value": 1}}]
     # DB["comments"].aggregate(pipeline)
@@ -315,6 +318,7 @@ def import_dataset_from_csv():
     print("Create Datasets")
     created_datasets = []
     datasets_doc = os.path.abspath(os.path.join(data_dir, "datasets", "census_datasets_fr.csv"))
+    
     with open(datasets_doc, "r") as f:
         reader = DictReader(f, delimiter=",")
         for row in reader:
@@ -327,8 +331,8 @@ def import_dataset_from_csv():
             dataset["url"] = row["link"]
             #CONTACT
             dataset["contact"] = [row["contact"]]
-            dataset["contact_type"] = ["email"]
-            dataset["contact_comments"] = [create_comment("admin", text="Ceci est un commentaire pour la prise de contact")]
+            dataset["contact_type"] = [{"label_fr": "email", "label_en": "email"}]
+            dataset["contact_comments"] = [create_comment("admin", text=row["contact"])]
             # SANTE-ENVIRONNEMENT
             dataset["data_domain"] = {"label_fr": row["data_domain"], "label_en": None}
             dataset["theme_category"] = {"label_fr":row["theme_category"], "label_en": None}
@@ -352,12 +356,18 @@ def import_dataset_from_csv():
             dataset["is_downloadable"] = bool(row["downloadable"])
             dataset["broadcast_mode"] = [ {"label_fr":n.strip(), "label_en":None} for n in row["broadcast_mode"].split("/") ]
             dataset["files_format"] = [n.strip().title() for n in row["format"].split("/")]
-            dataset["tech_comments"] = [create_comment("c24b", text="Commentaire sur l'accès technique")]
+            dataset["tech_comments"] = []
+            # dataset["tech_comments"] = [create_comment("c24b", text="Commentaire sur l'accès technique")]
             #LEGAL
             dataset["license_name"] = {"label_fr":row["license_name"], "label_en": None}
-            dataset["license_type"] = {"label_fr":row["licence_type"], "label_en": None}
+            dataset["license_type"] = [{"label_fr":n, "label_en": n} for n in row["license_type"].split("/")]
             dataset["has_pricing"] = bool(row['pricing']!= "Gratuit")
-            dataset["legal_comments"] = [create_comment("c24b", text="Commentaire sur le service juridique")]
+            if row['pricing']!= "Gratuit":
+
+                dataset["legal_comments"] = [
+                    create_comment("c24b", text=row["pricing"])]
+            else:
+                dataset["legal_comments"] = []
             dataset["has_restriction"] = bool(row['restrictions']!= "")
             if dataset["has_restriction"]: 
                 dataset["restrictions_comments"] = [create_comment("admin", text=row["restrictions"])]
@@ -371,12 +381,14 @@ def import_dataset_from_csv():
                 dataset["geospatial_geographical_coverage"] = row["geographical_geospatial_coverage"].split("+")
                 dataset["geographical_information_level"] = [{"label_fr":v.strip(), "label_en":translate(v.strip())} for v in row["geographical_information_level"].split("/")]
                 dataset["projection_system"] = [n.strip() for n in row["projection_system"].split("/")]
-                dataset["related_geographical_information"] = bool(row["related_geographical_information"])
-            dataset["geo_comments"] = [create_comment("c24b", text="Commentaire sur la qualification géographique")]
-            
+                dataset["related_geographical_information"] = bool(row["related_geographical_information"] == "")
+            if row["related_geographical_information"] != "":
+                dataset["geo_comments"] = [create_comment("c24b", text=row["related_geographical_information"])]
+            else:
+                dataset["geo_comments"] = []
             #TIME
             dataset["year"] = [n.strip() for n in row["year"].split("-")]
-            dataset["temporal_scale"] = [{"label_fr":v.strip(), "label_en":None } for v in row["temporal_scale"].split("/")]
+            dataset["temporal_scale"] = [v.strip() for v in row["temporal_scale"].split("/")]
             dataset["update_frequency"] = {"label_fr":row["update_frequency"], "label_en": translate(row["update_frequency"])}
             if row["automatic_update"] == "false":
                 dataset["automatic_update"] = False
@@ -390,7 +402,8 @@ def import_dataset_from_csv():
             dataset["last_modification"] = row["last_modification"]
             dataset["related_referentials"] = [v.strip() for v in row["related_referentials"].split("|")]
             dataset["other_access_points"] = [v.strip() for v in row["other_access_points"].split("|")]
-            dataset["context_comments"] = [create_comment("admin", text="Commentaire sur le contexte de production du dataset")]
+            # dataset["context_comments"] = [create_comment("admin", text="Commentaire sur le contexte de production du dataset")]
+            dataset["context_comments"] = []
             dataset["comments"] = [create_comment("admin", text=row["comment"])]
             ds = DB.datasets.insert_one(dataset)
             created_datasets.append(ds.inserted_id)
