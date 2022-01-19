@@ -44,7 +44,7 @@ async def list_referentials(model_name: str, request: Request):
     else:
         raise HTTPException(status_code=404, detail=f"Fields {model_name.lower()} for not found")    
 
-@router.get("/filters/{model_name}", response_description="Get fields that are used as filters given model_name")
+@router.get("/filters/{model_name}", response_description="Get fields given model_name that are declared as facets")
 async def list_referentials(model_name: str, request: Request):
     referentials = []
     for doc in await request.app.mongodb["meta_fields"].find({"model": model_name.title(), "order":{"$ne":"-1"}, "is_facet": True},
