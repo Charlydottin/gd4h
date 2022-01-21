@@ -53,10 +53,21 @@ async def search_datasets(lang:str, q: Optional[str] = Query(None, min_length=3,
         # for t in tokens:
         #     must.append({ "term": { "text": t }})
         # final_q = {"bool": {"must": must}}
+        #comprehensive query
+        # should = [] 
+        # for t in tokens:
+        #     should.append({ "term": { "text": t }})
+        # final_q = {"bool": {"should": should}}
+        #exact match
+        # final_q= {
+        # "match" : {
+        # "terms":    q, 
+        # "fields": fields
+        #     }
         
     highlight = {
         
-        "pre_tags" : ["<em class='tag-fr'>", "<em>"],
+        "pre_tags" : ["<em class='tag-fr highlight'>", "<em class='tag-fr highlight'>"],
         "post_tags" : ["</em>", "</em>"],
         "fields" : {f:{} for f in fields}
         }
@@ -114,15 +125,15 @@ async def search_datasets(lang:str, q: Optional[str] = Query(None, min_length=3,
         results.append(hit)
     return {"results":results, "count": result_count}
 
-@router.get("/organizations/", response_description="Search Organization by name or acronym")
-async def search_datasets(request: Request, q: Optional[str] = Query(None, min_length=3, max_length=50)):  
-    match_orgs= []
-    for doc in await request.app.mongodb["organizations"].find({"$or":[{"acronym": q}, {"name":q}]}, {"_id":1, "name":1, "acronym":1}).to_list(length=300):  
-        doc["_id"] = str(doc["_id"])
-        match_orgs.append(doc)
-    # final_q = {"query":{"bool": { "should": {"terms": "name.label_"+{lang}, "terms":"acronym.label_"+lang}}}}
-    # res = es.search(index="gd4h_datasets", query=final_q)
-    return {"organisations": match_orgs,"count":len(match_orgs)}
+# @router.get("/organizations/", response_description="Search Organization by name or acronym")
+# async def search_datasets(request: Request, q: Optional[str] = Query(None, min_length=3, max_length=50)):  
+#     match_orgs= []
+#     for doc in await request.app.mongodb["organizations"].find({"$or":[{"acronym": q}, {"name":q}]}, {"_id":1, "name":1, "acronym":1}).to_list(length=300):  
+#         doc["_id"] = str(doc["_id"])
+#         match_orgs.append(doc)
+#     # final_q = {"query":{"bool": { "should": {"terms": "name.label_"+{lang}, "terms":"acronym.label_"+lang}}}}
+#     # res = es.search(index="gd4h_datasets", query=final_q)
+#     return {"organisations": match_orgs,"count":len(match_orgs)}
 
             
             
