@@ -2,6 +2,7 @@
 import os
 from flask import Flask, jsonify, request
 import requests
+import urllib.parse
 import jinja2
 from copy import deepcopy
 from flask_cors import CORS, cross_origin
@@ -33,12 +34,23 @@ def home():
 
 
 
-@app.route('/datasets', methods=['GET'])
+@app.route('/datasets/', methods=['GET', 'POST'])
 def dataset_list():
+    
+    # if request.args.get("query") is not None:
+    #     query = urllib.parse.quote_plus(request.args.get("query"))
+    #     data = requests.get(API_ROOT_URL+"/search/datasets/fr?q="+query)    
+    #     count_results = data.json()
+    #     count = count_results["count"]
+    #     datasets = count_results["results"] 
+        
+    # else:
     req_datasets = requests.get(API_ROOT_URL+"/datasets")
     datasets = req_datasets.json()
     # print(datasets)
     count = requests.get(API_ROOT_URL+"/datasets/count")
+    count = count.json()
+        
     #build filter menu
     req_filters = requests.get(API_ROOT_URL+"/references/filters/dataset/")
     filters = req_filters.json()
@@ -57,16 +69,17 @@ def dataset_list():
                 _filters.append(f)
             else:
                 if (f["is_controled"]):
-                    print(f["slug"], "references")
+                    #print(f["slug"], "references")
                     values_req = requests.get(API_ROOT_URL+"/references/"+f['reference_table'])
                     if not values_req.status_code == 404:
                         f["is_bool"] = False
                         _filters.append(f)
                         values[f["slug"]] = values_req.json()
-                    else:
-                        print("Error", f["slug"])    
+                    # else:
+                    #     values[f["slug"]] = ""
+                        # print("Error", f["slug"])    
                 elif f["slug"] == "geographical_geospatial_information_level":
-                    print(f["slug"], "references")
+                    #print(f["slug"], "references")
                     values_req = requests.get(API_ROOT_URL+"/references/"+f['reference_table'])
                     if not values_req.status_code == 404:
                         _filters.append(f)
@@ -75,15 +88,14 @@ def dataset_list():
                         print("Error", f["slug"])
                 else:
                     values_req = requests.get(API_ROOT_URL+"/references/filters/dataset/"+f['slug']+"/values")
-                    print(f["slug"], "distinct values")
+                    #print(f["slug"], "distinct values")
                     if not values_req.status_code == 404:
                         values[f["slug"]] = values_req.json()
                         f["is_bool"] = False
                         _filters.append(f)
-                    else:
-                        print("Error", f["slug"])
-        
-    return render_template('datasets.tpl', result=datasets, count=count.json(), filters=_filters, values=values)
+                    #else:
+                        #print("Error", f["slug"])
+    return render_template('datasets.tpl', result=datasets, count=count, filters=_filters, values=values)
 
 @app.route('/datasets/<dataset_id>', methods=['GET'])
 def dataset_item(dataset_id):
@@ -99,7 +111,8 @@ def organization_list():
     req_orgs = requests.get(API_ROOT_URL+"/organizations")
     orgs = req_orgs.json()
     return render_template('organizations.tpl', result=orgs, count=len(orgs) )
-    
+
+
 @app.route("/organizations/<org_id>/", methods=["GET"])
 def organization_detail(org_id):
     print(org_id)
@@ -126,6 +139,11 @@ def comment_list():
     references = req_refs.json()
     return render_template('references.tpl', references=references, count=len(references))
 
+@app.route("/search?", methods=["GET"])
+def get_users():
+    req_refs = requests.get(f"{API_ROOT_URL}/search/datasets/fr?q=eau%20CO2")
+    references = req_refs.json()
+    return(references)
 
 if __name__=="__main__":
 #     # os.getenv("FRONT_HOST")

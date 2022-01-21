@@ -14,14 +14,6 @@
   <link rel="apple-touch-icon" href="/static/favicons/apple-touch-icon.png"><!-- 180×180 -->
   <link rel="icon" href="/static/favicons/favicon.svg" type="image/svg+xml">
   <link rel="shortcut icon" href="//static/favicons/favicon.ico" type="image/x-icon"><!-- 32×32 -->
- 
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-  <style>
-    em {
-      font-weight: 400;
-      background-color: yellow;
-    }
-  </style>
 </head>
 <body>
 
@@ -83,10 +75,10 @@
             <a class="fr-nav__link" href="/organizations/" target="_self"  > Institutions</a>
           </li>
           <li class="fr-nav__item">
-            <a class="fr-nav__link active" href="/datasets/" target="_self" aria-current="page" >Jeux de données</a>
+            <a class="fr-nav__link active" href="/datasets/" target="_self"  >Jeux de données</a>
           </li>
           <li class="fr-nav__item">
-            <a class="fr-nav__link" href="/references/" target="_self" >Référentiels</a>
+            <a class="fr-nav__link" href="/references/" target="_self" aria-current="page" >Référentiels</a>
           </li>
           <li class="fr-nav__item">
             <a class="fr-nav__link" href="/contact/" target="_self" >Contact</a>
@@ -100,133 +92,29 @@
 <main role="main" id="contenu" >
     <div class="fr-container fr-py-6w fr-px-2w">
   
-  <div class="fr-search-bar fr-search-bar--lg" id="search-2" role="search">
-    <label class="fr-label" for="search-787-input">
-        Rechercher
-    </label>
-    <input class="fr-input" placeholder="Exemple: Eau potable, métaux" type="text" id="query" name="search-input" />
-    <button type="submit" id="search-btn" class="fr-btn">
-        Rechercher
-    </button>
-    
-  </div>
-         
-<div class="fr-container fr-py-2w fr-col-offset-4">
-<h3><a class="fr-btn info-625" href="#"> {{count}}</a> Datasets</h3>
-</div>    
-<div class="fr-grid-row fr-grid-row--gutters fr-grid-row--center">
-        <nav class="fr-sidemenu fr-col-4" aria-label="Menu latéral" id="filters">
-            <div class="fr-sidemenu__inner">
-                <button class="fr-sidemenu__btn" hidden aria-controls="fr-sidemenu-wrapper" aria-expanded="false"></button>
-                <div class="fr-collapse" id="fr-sidemenu-wrapper">
-                    <div class="fr-sidemenu__title ">
-                      <h4>Filtres de recherche</h4>
-                  </button>
-                  </div>
-                    <ul class="fr-sidemenu__list">
-                      {%for _filter in filters%}
-
-                      <li class="fr-sidemenu__item fr-sidemenu__item--active">
-                        <ul>
-                          <li>
-                            {% if _filter["multiple"] and _filter["is_controled"]%}
-                            <div class="fr-form-group">
-                            <fieldset class="fr-fieldset">
-                              <legend class="fr-fieldset__legend fr-text--regular" id='checkboxes-legend'>
-                                  <b>{{_filter["label_fr"]}}:</b>
-                              </legend>
-                              <div class="fr-fieldset__content">
-                                {%for val in values[_filter["slug"]] %}
-                                <div class="fr-checkbox-group">
-                                    <input type="checkbox" id="{{slug}}-{{val.label_en}}" name="{{val.label_fr}}">
-                                    <label class="fr-label" for="{{slug}}-{{val.label_en}}">{{val.label_fr}}
-                                    </label>
-                                </div>
-                                {%endfor%}
-                              </div>
-                            </fieldset>
-                          </div>
-                        {% elif _filter["is_bool"] %}  
-                          <div class="fr-form-group">
-                            <fieldset class="fr-fieldset fr-fieldset--inline">
-                                <legend class="fr-fieldset__legend fr-text--regular" id='radio-inline-legend'>
-                                    {{_filter["label_fr"]}}
-                                </legend>
-                                <div class="fr-fieldset__content">
-                                    <div class="fr-radio-group">
-                                        <input type="radio" id="{{_filter['slug']}}-1" name="radio-inline">
-                                        <label class="fr-label" for="{{_filter['slug']}}-1">Oui
-                                        </label>
-                                    </div>
-                                    <div class="fr-radio-group">
-                                        <input type="radio" id="{{_filter['slug']}}-2" name="radio-inline">
-                                        <label class="fr-label" for="{{_filter['slug']}}-2">Non
-                                        </label>
-                                    </div>
-                                </div>
-                            </fieldset>
-                        </div> 
-                        {%elif _filter["is_controled"] %}
-                        <div class="fr-select-group">
-                          <label class="fr-label" for="select">
-                            {{_filter["label_fr"]}}
-                          </label>
-                          <select class="fr-select" id="select" name="select">
-                            {%for val in values[_filter["slug"]] %}
-                            <option value="{{val.label_fr}}">{{val.label_fr}}</option>
-                            {%endfor%}
-                          </select>
-                        </div>
-                            {%endif %}  
-                      </li>
-                        </ul>
-                        </li>
-                        {%endfor%}
-                    </ul>
-                        
-                </div>
-            </div>
-        </nav> 
-        <div class="fr-col-8">
-        <ul class="fr-btns-group fr-btns-group--inline">
-            <li>
-    <button class="fr-btn fr-btn--secondary fr-fi-error-warning-line fr-link--icon-left" title="Report and error">Report an error</button>
-    </li><li>
-    <button class="fr-btn  fr-fi-add-circle-line fr-link--icon-left" title="Propose an new dataset">Propose a new dataset</button>
-</li>
-<li>
-
-  <button class="fr-btn fr-btn--secondary fr-fi-refresh-line fr-link--icon-left" id="reset" title="Refresh">Reset</button
-</li>
-</ul>
-<div class="fr-container fluid" id="dataset_list">
-  {% for org in result %}
-  <div class="fr-card fr-card--horizontal fr-px-2w fr-enlarge-link">
-    <div class="fr-card__body ">
-       <h2 class="fr-card__title">
-           <a href="/datasets/{{org['_id']['$oid']}}" class="fr-card__link">{{org["name"]}}</a>
+  
+<h3><a class="fr-btn info-625" href="#"> {{count}}</a> Tables de References</h3>
        
-       </h2>
-       <p class="fr-card__desc">{{org["description"]["label_fr"]}}</p>
-       <p class="fr-card__detail">
-        {%for o in org["organizations"] %}  
-        {%if "_id" in o %}
-        <a href="/organizations/{{o['_id']['$oid']}}" class="fr-tag">{{o["name"]}}</a>
-        {%else %}
-        <a href="/organizations/}}" class="fr-tag">{{o["name"]}}</a>
-        {%endif%}
-        {%endfor%}
-        </p>
-        <a href="/datasets/{{org['_id']['$oid']}}" class="fr-card__link"></a>
+<div class="fr-container fluid">
+  {% for ref in references %}
+  <div class="fr-card fr-card--horizontal fr-px-2w">
+    <div class="fr-card__body ">
+
+       <h4 class="fr-card__title">
+           <a href="/references/{{ref['table_name']}}" class="fr-card__link">{{ref["tablename"]}}</a>
+       </h4>
+       <ul class="fr-tag-list" style="list-style: none;">
+       {%for tag in ref["scope"].split(",") %}
+       <li><a class="fr-tag fr-fi-file-line fr-tag--icon-left fr-tag--sm">{{tag}}</a>
+       </li>
+       {%endfor%}
+    </ul>
     </div>
     
-</div>
+    </div>
   {%endfor%}
-
+</div>
 </div>   
-</div>
-</div>
-</div>
 </main>
 <script type="module" src="/static/js/dsfr.module.js"></script>
 <script type="text/javascript" nomodule src="/static/js/dsfr.nomodule.js"></script>
@@ -352,39 +240,7 @@
 </footer>
 </body>
 <script>
-  //dsfr.start();
-  $(document).ready(function() {
-    $('#reset').click(function() {
-      $('input#query').val(" ");
-      location.reload();
-    });
-    $("button#search-btn").click(function() {
-      var search_q = ($('#query').val());
-      
-      var url = "/datasets/"
-      var api_url = "http://localhost:3000/search/datasets/fr?q="+encodeURIComponent(search_q);
-      $.getJSON(api_url, function(data, status){
-        var count = data["count"];
-        var results = data["results"];
-        console.log(results);
-        
-        $("a.info-625").text(count);
-        $('div#dataset_list').empty();
-        $(results).each(function(index){
-          $("div#dataset_list").append(
-            '<div class="fr-card fr-card--horizontal fr-px-2w fr-enlarge-link">'
-              +'<div class="fr-card__body ">'
-                +'<h2 class="fr-card__title">'
-                  +'<a href="/datasets/'+this._id+'" class="fr-card__link">'+this.name+'</a>'+this.acronym+'</h2>'
-                  +'<p class="fr-card__detail">'
-                    +'<a href="/organizations/" class="fr-tag">'+this.organizations[0]+'</a></p>'
-                  +'<p class="fr-card__desc">'+this.description+'</p>'
-              +'<span class="highligh">'+this.highlight[0].description+'</span>'
-              +'</div></div>');
-        });
-      })})});
-        
-      
-    
+  dsfr.start();
   </script>
 </html>
+
