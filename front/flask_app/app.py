@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from http.client import HTTPException
+#from msilib.schema import Error
 import os
 from flask import Flask, jsonify, request
 import requests
@@ -33,6 +35,17 @@ def home():
     return render_template('index.html')
 
 
+@app.route('/search/datasets/{lang}?', methods=['GET'])
+def search_dataset():
+    print("search dataset")
+    if request.args.get("query") is not None:
+        query = urllib.parse.quote_plus(request.args.get("query"))
+        data = requests.get(API_ROOT_URL+"/search/datasets/fr?q="+query)    
+        count_results = data.json()
+        count = count_results["count"]
+        datasets = count_results["results"] 
+        return render_template('datasets.tpl', result=datasets, count=count)
+    # return HTTPException("No query")
 
 @app.route('/datasets/', methods=['GET', 'POST'])
 def dataset_list():
