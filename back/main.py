@@ -13,7 +13,7 @@ from apps.references.routers import router as ref_router
 from apps.comments.routers import router as comment_router
 from apps.search.routers import router as search_router
 # from apps.translate.routers import router as translate_router
-# from apps.filter.routers import router as translate_router
+from apps.filter.routers import router as filter_router
 
 
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -54,7 +54,7 @@ app.include_router(ref_router, tags=["references"], prefix="/references")
 app.include_router(comment_router, tags=["comments"], prefix="/comments")
 # app.include_router(translate_router, tags=["translations"], prefix="/translate")
 app.include_router(search_router, tags=["search"], prefix="/search")
-# app.include_router(filter_router, tags=["filter"], prefix="/filter")
+app.include_router(filter_router, tags=["filter"], prefix="/filter")
 
 
 

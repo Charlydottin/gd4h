@@ -9,7 +9,7 @@ from argostranslate import package, translate
 
 curr_dir = os.getcwd()
 # print(curr_dir)
-# parent = os.path.dirname(os.getcwd())
+parent = os.path.dirname(os.getcwd())
 data_dir = os.path.join(curr_dir, "data")
 print(data_dir)
 metadata_doc = os.path.abspath(os.path.join(data_dir, "meta", "rules.csv"))

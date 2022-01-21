@@ -79,7 +79,7 @@ Pour le moment l'installation a été prévue simplement sur le système d'explo
 
 clone this repository
 
-git clone 
+git clone **_<changeme>_**
 
 ### System requirements
 
