@@ -14,18 +14,21 @@
         <div class="fr-container fr-py-6w fr-px-2w">
             {%block content %}{%endblock%}
         </div>
-</main>
-{%include "footer.tpl" %}
-<script type="module" src="/static/js/dsfr.module.js"></script>
-<script type="text/javascript" nomodule src="/static/js/dsfr.nomodule.js"></script>
-</body>
 <script type="module" src="/static/js/dsfr.module.min.js"></script>
 <script type="text/javascript" nomodule src="/static/js/dsfr.nomodule.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</main>
+{%include "footer.tpl" %}
 
+</body>
+
+<script type="module" src="/static/js/dsfr.module.min.js"></script>
+<script type="text/javascript" nomodule src="/static/js/dsfr.nomodule.min.js"></script>
 <script>
-  dsfr.start();
+  
   
     {%block script %}{% endblock %}
 </script>
+
 
 </html>

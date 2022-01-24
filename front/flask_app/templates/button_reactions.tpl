@@ -8,3 +8,8 @@ Report an error
 <button onclick="location.href='https://github.com/c24b/gd4h/discussions/new'" class="fr-btn fr-btn--secondary fr-fi-external-link-line fr-btn--icon-right">
 Discuss with the community
 </button>
+{%if query %}
+    <button onclick="location.reload();" class="fr-btn fr-btn--secondary fr-fi-refresh-line fr-btn--icon-right">
+        Reset
+</button>
+{% endif %}

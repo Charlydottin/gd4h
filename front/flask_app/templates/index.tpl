@@ -87,10 +87,7 @@ Santé-Environnement
 
 {%block script%}
   // Options disponibles à l'initialisation du DSFR
-  window.dsfr = {
-    verbose: true,
-    mode: 'manual'
-  };
+  
 
 <!-- Script en version es6 module et nomodule pour les navigateurs le ne supportant pas -->
 {%endblock%}

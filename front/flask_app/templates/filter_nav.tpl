@@ -21,8 +21,8 @@
                       <div class="fr-fieldset__content">
                         {%for val in values[_filter["slug"]] %}
                         <div class="fr-checkbox-group">
-                            <input type="checkbox" id="{{slug}}-{{val.label_en}}" name="{{val.label_fr}}">
-                            <label class="fr-label" for="{{slug}}-{{val.label_en}}">{{val.label_fr}}
+                            <input type="checkbox" id="{{_filter["slug"]}}-{{val.label_en}}" name="{{val.label_fr}}">
+                            <label class="fr-label" for="{{_filter["slug"]}}-{{val.label_en}}">{{val.label_fr}}
                             </label>
                         </div>
                         {%endfor%}
@@ -37,13 +37,13 @@
                           </legend>
                           <div class="fr-fieldset__content">
                             <div class="fr-radio-group">
-                                <input type="radio" id="{{_filter['slug']}}-1" name="radio-inline">
-                                <label class="fr-label" for="{{_filter['slug']}}-1">Oui
+                                <input type="radio" id="{{_filter['slug']}}-true" name="radio-inline">
+                                <label class="fr-label" for="{{_filter['slug']}}-true">Oui
                                 </label>
                             </div>
                             <div class="fr-radio-group">
-                                <input type="radio" id="{{_filter['slug']}}-2" name="radio-inline">
-                                <label class="fr-label" for="{{_filter['slug']}}-2">Non
+                                <input type="radio" id="{{_filter['slug']}}-false" name="radio-inline">
+                                <label class="fr-label" for="{{_filter['slug']}}-false">Non
                                 </label>
                             </div>
                         </div>
@@ -56,7 +56,7 @@
                     </label>
                     <select class="fr-select" id="select" name="select">
                       {%for val in values[_filter["slug"]] %}
-                      <option value="{{val.label_fr}}">{{val.label_fr}}</option>
+                      <option value="{{_filter["slug"]}}-{{val.label_fr}}">{{val.label_fr}}</option>
                       {%endfor%}
                     </select>
                   </div>
