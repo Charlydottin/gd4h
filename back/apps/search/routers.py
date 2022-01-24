@@ -67,20 +67,20 @@ async def search_datasets(lang:str, q: Optional[str] = Query(None, min_length=3,
         
     highlight = {
         
-        "pre_tags" : ["<em class='tag-fr highlight'>", "<em class='tag-fr highlight'>"],
-        "post_tags" : ["</em>", "</em>"],
-        "fields" : {f:{} for f in fields}
+        "pre_tags" : "<em class='tag-fr highlight'>",
+        "post_tags" :"</em>",
+        "fields" : {f:{} for f in fields }
         }
     res = es.search(index=index_name, query=final_query, highlight=highlight)
     result_count =  res["hits"]["total"]["value"]
-    _ids = [r["_id"] for r in res["hits"]["hits"]]
-    highlight = [r["highlight"] for r in res["hits"]["hits"] ]
-    hits = [r["_source"] for r in res["hits"]["hits"]]
-    scores = [round(r["_score"]*10,2) for r in res["hits"]["hits"]]
     results = []
-    for _id, hit,higlight,score in zip(_ids, hits, highlight, scores):
-        hit.update({"_id":_id, "highlight":highlight, "score": score})
-        results.append(hit)
+    for r in res["hits"]["hits"]:
+        
+        result = r["_source"]
+        result["_id"] = r["_id"]
+        result["score"] = str(round(r["_score"]*10,2))+"%"
+        result["highlight"] = r["highlight"]
+        results.append(result)
     return {"results":results, "count": result_count}
     
 @router.get("/datasets/{lang}", response_description="Search Full Text in name, description, data section( environment, nature, subthematic, exposure_factor, exp")
