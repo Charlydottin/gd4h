@@ -48,6 +48,8 @@ def init_meta():
     DB.logs.drop()
     DB.users.drop()
     create_default_users()
+    translate_fr_references()
+    translate_en_references()
 
 def translate(text, _from="fr"):
     if _from == "fr":
@@ -489,7 +491,26 @@ def translate_datasets():
                 if update:
                     DB.datasets.update_one({"_id": dataset["_id"]}, {"$set": {k:v}})            
                     continue
-
+def translate_fr_references():
+    print("Translate references from FR > EN")
+    for tablename in DB.references.distinct("tablename"):
+        for ref_value in DB[tablename].find({"$or":[{"label_en": ""},{"label_en": None}], "label_fr":{"$nin": ["", None]}}, {"_id":1, "label_fr":1}):
+            try: 
+                
+                value_en = translate(ref_value["label_fr"], _from="fr")
+                DB[tablename].update_one({"_id": ref_value["_id"]}, {"$set": {"label_en": value_en} })
+            except KeyError:
+                pass
+def translate_en_references():
+    print("Translate references from EN > FR")
+    for tablename in DB.references.distinct("tablename"):
+        for ref_value in DB[tablename].find({"$or":[{"label_fr": ""},{"label_fr": None}], "label_en":{"$nin": ["", None]}}, {"_id":1, "label_en":1}):
+            try: 
+                
+                value_fr = translate(ref_value["label_en"], _from="en")
+                DB[tablename].update_one({"_id": ref_value["_id"]}, {"$set": {"label_fr": value_fr} })
+            except KeyError:
+                pass
 if __name__ == '__main__':
     init_meta()
     init_data()

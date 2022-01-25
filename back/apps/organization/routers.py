@@ -99,3 +99,14 @@ async def delete_organization(id: str, request: Request):
     raise HTTPException(status_code=404, detail=f" Organization {id} not found")
 
 
+# @router.get("/filter/{lang}/{key}/{value}/", response_description="Filter organization by value")
+# async def search_datasets(request: Request, lang:str, key:str, value:str):    
+#     doc = request.app.mongodb["meta_fields"].find_one({"slug": key})
+#     if doc["translation"] is True:
+#         search_key = { key+'.label_'+lang: value }
+#     else:
+#         search_key = { key: value }
+#     datasets = []
+#     for doc in await request.app.mongodb["datasets"].find(search_key, {"_id":0}).to_list(length=100):
+#         datasets.append(doc)
+#     return {"organizations": datasets}

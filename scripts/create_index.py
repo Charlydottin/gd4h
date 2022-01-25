@@ -18,11 +18,11 @@ def create_mapping(lang="fr"):
     else:
         analyzer = "std_english"
     for rules in DB.meta_fields.find({"model":"Dataset", "external_model":{"$ne":"Comment"}, "$or":[{"is_indexed":True}, {"is_facet":True}]}, {"_id":0}):
-        if rules["translation"]:
-            prop_key = rules["slug"]+"_"+lang
-        else:
-            prop_key = rules["slug"]
-        if rules["datatype"] in ["str", "dict"]:
+        prop_key = rules["slug"]
+        if rules["slug"] == "organizations":
+            map_property[prop_key] = {"type": "nested"}
+            
+        elif rules["datatype"] in ["str", "dict"]:
             map_property[prop_key] = {"type": "text"}
             map_property[prop_key]["fields"] = {"raw": {"type": "keyword"}}
             map_property[prop_key]["analyzer"] = analyzer
@@ -74,7 +74,7 @@ def map_document(doc, translated_fields, other_fields, lang="fr"):
     index_doc = {}
     for k in doc.keys():
         if k == "organizations":
-            index_doc[k] = [n.get("name") for n in doc[k]]
+            index_doc[k] = [{l:m for l,m in n.items if n!="_id"} for n in doc[k]]
         elif "last_" in k:
             index_doc[k] = doc[k]
         elif k in translated_fields:
@@ -97,12 +97,13 @@ def index_datasets(lang="fr"):
     label = "label_"+lang
     for doc in DB.datasets.find({}, fields):
         doc_id = str(doc["_id"])
-        print(doc_id)
+        
         del doc["_id"]
         index_doc = {}
         for k in doc.keys():
             if k == "organizations":
-                index_doc[k] = [n.get("name") for n in doc[k]]
+                index_doc[k] = [{"name":n["name"],"acronym": n["acronym"], "agent_type":n["agent_type"].get("label_"+lang), "organization_type":n["organization_type"].get("label_"+lang)} for n in doc[k]]
+                print(index_doc[k])
             elif "last_" in k:
                 pass
             elif k in translated_fields:
@@ -118,7 +119,7 @@ def index_datasets(lang="fr"):
         print(response)
         
 if __name__ == "__main__":
-    create_index()
-    create_index("en")
-    index_datasets()
+    create_index("datasets", "fr")
+    create_index("datasets","en")
+    index_datasets("fr")
     index_datasets("en")

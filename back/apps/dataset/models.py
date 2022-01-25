@@ -1,10 +1,18 @@
 from typing import Optional
 import uuid
+import os
 from datetime import date, datetime, time, timedelta
 from pydantic import BaseModel, Field
 # from fastapi_utils.enums import StrEnum
 from ..organization.models import OrganizationModel
 from typing import List
+from pymongo import MongoClient
+from pydantic import BaseModel, create_model
+
+# DATABASE_NAME = "GD4H_V1"
+# mongodb_client = MongoClient("mongodb://localhost:27017")
+# DB = mongodb_client[DATABASE_NAME]
+
 # from script.db import DB as db
 
 # class NatureTypeFR(StrEnum):

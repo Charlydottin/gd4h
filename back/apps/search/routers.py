@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Body, Request, HTTPException, status, Query
-from typing import Optional
+from typing import Optional, List
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from elasticsearch7 import Elasticsearch
 from elasticsearch_dsl import Search
 from elasticsearch_dsl.query import MultiMatch, Match
 from pymongo import MongoClient
+
 # from .models import Query
 # from elasticsearch_dsl import Search
 # from elasticsearch_dsl.query import MultiMatch, Match, Query as Q
@@ -22,16 +23,16 @@ db_elastic = {
 }
 
 es = Elasticsearch("http://localhost:9200")
-DATABASE_NAME = "GD4H_V1"
-mongodb_client = MongoClient("mongodb://localhost:27017")
-DB = mongodb_client[DATABASE_NAME]
+# DATABASE_NAME = "GD4H_V1"
+# mongodb_client = MongoClient("mongodb://localhost:27017")
+# DB = mongodb_client[DATABASE_NAME]
 
 router = APIRouter()
 
 
 
 @router.get("/datasets/{lang}", response_description="Search Full Text in name, description, data section( environment, nature, subthematic, exposure_factor, exp")
-async def search_datasets(lang:str, q: Optional[str] = Query(None, min_length=3, max_length=50)):
+async def search_datasets(lang:str, q: Optional[str] = Query(None, min_length=2, max_length=50)):
     # fields = [
     #     d["slug"] for d in 
     #     DB.meta_fields.find({"model":"Dataset", "external_model":{"$nin":["Comment", "Organization"]}, "is_indexed":True}, {"_id":0, "slug":1})
@@ -75,7 +76,6 @@ async def search_datasets(lang:str, q: Optional[str] = Query(None, min_length=3,
     result_count =  res["hits"]["total"]["value"]
     results = []
     for r in res["hits"]["hits"]:
-        
         result = r["_source"]
         result["_id"] = r["_id"]
         result["score"] = str(round(r["_score"]*10,2))+"%"
@@ -83,59 +83,9 @@ async def search_datasets(lang:str, q: Optional[str] = Query(None, min_length=3,
         results.append(result)
     return {"results":results, "count": result_count}
     
-@router.get("/datasets/{lang}", response_description="Search Full Text in name, description, data section( environment, nature, subthematic, exposure_factor, exp")
-async def search_datasets(lang:str, q: Optional[str] = Query(None, min_length=3, max_length=50)):
-    # fields = [
-    #     d["slug"] for d in 
-    #     DB.meta_fields.find({"model":"Dataset", "external_model":{"$nin":["Comment", "Organization"]}, "is_indexed":True}, {"_id":0, "slug":1})
-    #     ]
-    fields = ['name', 'acronym', 'description', 'environment', 'nature', 'subthematic', 'exposure_factor', 'exposure_factor_category', 'theme_category', "organization"]
-    index_name = f"datasets_{lang}"
-    tokens = q.strip().split()
-    
-    final_query = {
-        "multi_match" : {
-        "query":    q, 
-        "fields": fields
-        }
-    }
 
-    # if len(tokens) > 1:
-        #very restrictive query
-        # must = [] 
-        # for t in tokens:
-        #     must.append({ "term": { "text": t }})
-        # final_q = {"bool": {"must": must}}
-        
-    highlight = {
-        
-        "pre_tags" : ["<em class='tag-fr'>", "<em>"],
-        "post_tags" : ["</em>", "</em>"],
-        "fields" : {f:{} for f in fields}
-        }
-    res = es.search(index=index_name, query=final_query, highlight=highlight)
-    result_count =  res["hits"]["total"]["value"]
-    _ids = [r["_id"] for r in res["hits"]["hits"]]
-    highlight = [r["highlight"] for r in res["hits"]["hits"] ]
-    hits = [r["_source"] for r in res["hits"]["hits"]]
-    scores = [round(r["_score"]*10,2) for r in res["hits"]["hits"]]
-    results = []
-    for _id, hit,higlight,score in zip(_ids, hits, highlight, scores):
-        hit.update({"_id":_id, "highlight":highlight, "score": score})
-        results.append(hit)
-    return {"results":results, "count": result_count}
-
-# @router.get("/organizations/", response_description="Search Organization by name or acronym")
-# async def search_datasets(request: Request, q: Optional[str] = Query(None, min_length=3, max_length=50)):  
-#     match_orgs= []
-#     for doc in await request.app.mongodb["organizations"].find({"$or":[{"acronym": q}, {"name":q}]}, {"_id":1, "name":1, "acronym":1}).to_list(length=300):  
-#         doc["_id"] = str(doc["_id"])
-#         match_orgs.append(doc)
-#     # final_q = {"query":{"bool": { "should": {"terms": "name.label_"+{lang}, "terms":"acronym.label_"+lang}}}}
-#     # res = es.search(index="gd4h_datasets", query=final_q)
-#     return {"organisations": match_orgs,"count":len(match_orgs)}
-
-            
-            
-
-
+# @router.get("/datasets/{lang}/filter", response_description="search by facet")
+# async def filter_datasets(lang:str, q: Optional[List[str]] = Query(None), request=Request):
+#     facets = []
+#     for doc in await request.app.mongodb["meta_fields"].find({"is_indexed": True}, {"slug":1,"label_fr":1,"label_en":1, "translation":1, "type":1, "multiple":1}).to_list(length=200):
+#         facets.append(doc)
