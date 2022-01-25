@@ -45,13 +45,6 @@
     var element = document.getElementById("datasets_list");
     $("button#reset-filter").click(function(){
         console.log("click");
-        //$("#filter_nav").val() = "";
-        //$("#filter_nav").append(filter_nav);
-        /$("#datasets_list").append(element);
-        //checkboxes = nav_filters.querySelectorAll('input[type="checkbox"]');
-        //radios = nav_filters.querySelectorAll('input[type="radio"]');
-        //checkboxes.prop('checked',false);
-        //radios.prop('checked',false); 
     });
     $("button#reset").click(function(){
         $("#search_results").val() = '';
