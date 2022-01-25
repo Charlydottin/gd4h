@@ -47,6 +47,8 @@
         console.log("click");
     });
     $("button#reset").click(function(){
+        $("#filter_nav").val() = '';
+        $("#filter_nav").append(filter_nav);
         $("#search_results").val() = '';
         $("#datasets_list").append(element);
     });
@@ -90,7 +92,7 @@
           }
          });
         q = args.join("&");
-        //alert(q);
+        alert(q);
         fetch('/filter?'+q)
         .then(function(response) {
             $('#search_results').empty();
