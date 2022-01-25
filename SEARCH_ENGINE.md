@@ -1,7 +1,7 @@
 # Elastic Search
 
 ## Stratégies de recherche
- 
+
 ### Quelle pertinence?
 
 > Le curseur doit etre positionné entre **généralité et spécificité**:
@@ -36,9 +36,9 @@ et donc dans le paramêtrage:
     - boolean OR ou AND / query_string
 
 - une **recherche avec plusieurs termes** doit elle absolument contenir tous les termes?
-   - AND OR
-   - must or should
-   - minimum should match
+  - AND OR
+  - must or should
+  - minimum should match
 
 
 - définir les **champs de recherche** : doit on chercher simplement dans la description et le nom ou doit-on élargir aux filtres thématiques?
@@ -61,7 +61,7 @@ et donc dans le paramêtrage:
 ## Propositions
 
 * **Barre de recherche**: 
- 
+
 recherche plein text par défault sur les champs titre, description et tous les champs de la section DATA
 
 highlight sur la description et le titre (apparaissent seulement dans la liste des résultats en texte  contrairement aux filtres
@@ -178,7 +178,7 @@ logarithme (en base 10 ou en base 21) de l'inverse de la proportion de documents
 Le score TDF-IDF s'obtient en multipliant les 2 parametres.
 
 - Dans le cas de la recherche plein texte, on pondère par la **mesure de longueur du champ**. 
- 
+
 Plus le champ est grand, plus le poids sera faible ; inversement, plus le champ est petit, plus le poids sera élevé.
 La norme de longueur de champs est l'inverse de la racine carré du nombre de termes dans le champs.
 
@@ -257,7 +257,7 @@ L'option highlight permet de renvoyer dans les résultats les endroits exacts  o
 
 
 ### Définition de l'offset
- 
+
 Pour extraire l'élément de correspondance, il faut définir le carcactère de début et de fin pour chaque mot du texte original.
 
 - `fields` : au paramétrage initial en définissant les champs concernés par le highlight à choisir quand les champs contiennent beaucoup de texte (meilleures perfs) > unified
@@ -272,7 +272,7 @@ Pour extraire l'élément de correspondance, il faut définir le carcactère de 
 
 
 ### Paramétrage de l'encodage
- le highlight doit il etre du texte simple ou de l'HTML defaul or HTML
+le highlight doit il etre du texte simple ou de l'HTML defaul or HTML
 
 ### Choix des champs à afficher
 
@@ -280,14 +280,14 @@ fields: lister les champs à afficher * est accepté
 
 
 ### Paramétrage du fragment:
- - type de fragment `fragmenter`: simple (meme taille) ou span (conserve le texte autour)
- - marge du fragment `fragment_offset`: +x caractères avant et après le match (seulement avec fvh)
- - taille du fragment `fragment_size`: taille du fragment en nb de caractère: default: 100
- - type de tag de début et de fin: pre_tag, post_tags
- - ordre: dans l'ordre des champs annoncé et ou l'ordre de pertinence?
- - nombre de fragment: number_of_fragments 
- - quand pas de match no_match_size 
- - matched_fields combiner les match dans un seul champ
+- type de fragment `fragmenter`: simple (meme taille) ou span (conserve le texte autour)
+- marge du fragment `fragment_offset`: +x caractères avant et après le match (seulement avec fvh)
+- taille du fragment `fragment_size`: taille du fragment en nb de caractère: default: 100
+- type de tag de début et de fin: pre_tag, post_tags
+- ordre: dans l'ordre des champs annoncé et ou l'ordre de pertinence?
+- nombre de fragment: number_of_fragments 
+- quand pas de match no_match_size 
+- matched_fields combiner les match dans un seul champ
 
 Le paramétrage se fait dans la réquête on peut définir les règles générales et réecrire les cas particulier localement
 

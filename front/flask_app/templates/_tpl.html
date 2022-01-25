@@ -1,0 +1,34 @@
+<p>
+    <h3>
+        <a href="/datasets/{{dataset['_id']['$oid']}}/" class="fr-card__link">{{dataset["name"]}}</a>
+       {% if dataset["acronym"] != "" %}
+        {{dataset["acronym"]}}
+       {%endif%}
+     </h3>
+    
+    <p class="fr-card__desc">{{dataset["description"]["label_fr"]}}</p>
+    <p class="fr-card__detail">
+     {%for o in dataset["organizations"] %}  
+     <a href="/organization/{{o['_id']['$oid']}}" class="fr-tag">{{o["name"]}}</a>
+     
+     {%endfor%}
+     </p>
+     <a href={{dataset[url]}}>{{dataset[url]}}</a>
+     <ul>
+   
+   {%if not "comments" in key %} 
+   
+     {%if not "organizations" in key and not "_id" in key%}
+     
+       <li><b>{{key}}</label></b>: {{dataset[key]}}</li>
+       {%endif%}
+   {% else%}
+   <button class="fr-btn fr-btn--secondary fr-fi-chat-link-line fr-btn--icon-right">
+     {{key}}
+ </button>
+   {% endif %}  
+   
+
+   {% endfor %}
+ </ul>
+   </p>

@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 from http.client import HTTPException
+from operator import itemgetter
 #from msilib.schema import Error
 import os
 from flask import Flask, jsonify, request
 import requests
 import urllib.parse
 import jinja2
-from copy import deepcopy
+import itertools
 from flask_cors import CORS, cross_origin
-from os import environ
+import urllib.parse
 
 template_dir = os.path.join(os.path.dirname(__file__),'templates')
 static_dir = os.path.join(os.path.dirname(__file__),'static')
@@ -24,100 +25,107 @@ API_ROOT_URL="http://127.0.0.1:3000"
 
 def render_template(template_name, **kwargs):
     template = jinja_env.get_template(template_name)
+    kwargs["lang"] = "fr"
+    kwargs["title"]= "Green Data For Health"
+    if "page_title" not in kwargs:
+        kwargs["page_title"] = template_name.split(".")[0].title()
+    kwargs["tagline"] = "Outil de recensement des données vertes utiles en Santé Environnement"
+    return template.render(**kwargs)
     
-    if kwargs:
-        return template.render(**kwargs)
-    else:
-        return template.render()
-
 @app.route("/")
 def home():
-    return render_template('index.html')
+    return render_template('index.tpl', title="Green Data For Health")
+def build_filter_menu():
+    req_filters = requests.get(API_ROOT_URL+"/references/filters/dataset/")
+    filters = req_filters.json()
+    values = {}
+    _filters = {f["section"]: [] for f in filters}
+    for section, filter_group in itertools.groupby(filters, lambda f: f["section"]):
+        for f in filter_group:
+            if f["slug"] == "organizations":
+                req_org = requests.get(API_ROOT_URL+"/organizations/")    
+                values[f["slug"]] = [r["name"] for r in req_org.json()]
+                f["is_bool"] = False
+                _filters[section].append(f)
+            else:
+                if f["datatype"] == "bool":
+                    f["is_bool"] = True
+                    values[f["slug"]] = [{"label_en":"Yes", "label_fr":"Oui"},{"label_en":"No", "label_fr":"Non"}]
+                    _filters[section].append(f)
+                else:
+                    if (f["is_controled"]):
+                        #print(f["slug"], "references")
+                        values_req = requests.get(API_ROOT_URL+"/references/"+f['reference_table'])
+                        if not values_req.status_code == 404:
+                            f["is_bool"] = False
+                            values[f["slug"]] = values_req.json()
+                            _filters[section].append(f)    
+                    else:
+                        values_req = requests.get(API_ROOT_URL+"/references/filters/dataset/"+f['slug']+"/values")
+                        if not values_req.status_code == 404:
+                            values[f["slug"]] = values_req.json()
+                            f["is_bool"] = False
+                            _filters[section].append(f)
+    return _filters, values
 
+@cross_origin()
+@app.route("/search")
+def results():
+    q = request.args.get('query')
+    query = urllib.parse.quote_plus(q)
+    results= requests.get(f"{API_ROOT_URL}/search/datasets/fr?q={query}")
+    references = results.json()
+    _filters, values = build_filter_menu()
+    return jsonify({'data': render_template('search_results.tpl', lang="fr", page_title="Jeux de données", count=references["count"],results=references["results"], query=q, filters=_filters, values=values)})
+    
+@cross_origin()
+@app.route("/filter")
+def filter():
+    arg_query=[]
+    for args,values in request.args.items():
+        if values in ["No", "Non"]:
+            values = "false"
+        elif values in ["Yes", "Oui"]:
+            values = "true"
+        arg_query.append(args+"="+values)
+    
+    arg_query = "&".join(arg_query)
+    results= requests.get(f"{API_ROOT_URL}/datasets/filter/fr?{arg_query}")
+    references = results.json()
+    _filters, values = build_filter_menu()
+    return jsonify({'data': render_template('search_results.tpl', lang="fr", page_title="Jeux de données", count=references["count"],results=references["results"],query=arg_query, filters=_filters, values=values)})
 
-@app.route('/search/datasets/{lang}?', methods=['GET'])
-def search_dataset():
-    print("search dataset")
-    if request.args.get("query") is not None:
-        query = urllib.parse.quote_plus(request.args.get("query"))
-        data = requests.get(API_ROOT_URL+"/search/datasets/fr?q="+query)    
-        count_results = data.json()
-        count = count_results["count"]
-        datasets = count_results["results"] 
-        return render_template('datasets.tpl', result=datasets, count=count)
-    # return HTTPException("No query")
 
 @app.route('/datasets/', methods=['GET', 'POST'])
 def dataset_list():
-    
-    # if request.args.get("query") is not None:
-    #     query = urllib.parse.quote_plus(request.args.get("query"))
-    #     data = requests.get(API_ROOT_URL+"/search/datasets/fr?q="+query)    
-    #     count_results = data.json()
-    #     count = count_results["count"]
-    #     datasets = count_results["results"] 
-        
-    # else:
+    print(request.method)
     req_datasets = requests.get(API_ROOT_URL+"/datasets")
     datasets = req_datasets.json()
-    # print(datasets)
     count = requests.get(API_ROOT_URL+"/datasets/count")
     count = count.json()
         
     #build filter menu
-    req_filters = requests.get(API_ROOT_URL+"/references/filters/dataset/")
-    filters = req_filters.json()
-    values = {}
-    _filters = []
-    for f in filters:
-        if f["slug"] == "organizations":
-            req_org = requests.get(API_ROOT_URL+"/organizations/")    
-            values[f["slug"]] = [r["name"] for r in req_org.json()]
-            f["is_bool"] = False
-            _filters.append(f)
-        else:
-            if f["datatype"] == "bool":
-                f["is_bool"] = True
-                values[f["slug"]] = [{"label_en":"Yes", "label_fr":"Oui"},{"label_en":"No", "label_fr":"Non"}]
-                _filters.append(f)
-            else:
-                if (f["is_controled"]):
-                    #print(f["slug"], "references")
-                    values_req = requests.get(API_ROOT_URL+"/references/"+f['reference_table'])
-                    if not values_req.status_code == 404:
-                        f["is_bool"] = False
-                        _filters.append(f)
-                        values[f["slug"]] = values_req.json()
-                    # else:
-                    #     values[f["slug"]] = ""
-                        # print("Error", f["slug"])    
-                elif f["slug"] == "geographical_geospatial_information_level":
-                    #print(f["slug"], "references")
-                    values_req = requests.get(API_ROOT_URL+"/references/"+f['reference_table'])
-                    if not values_req.status_code == 404:
-                        _filters.append(f)
-                        values[f["slug"]] = values_req.json()
-                    else:
-                        print("Error", f["slug"])
-                else:
-                    values_req = requests.get(API_ROOT_URL+"/references/filters/dataset/"+f['slug']+"/values")
-                    #print(f["slug"], "distinct values")
-                    if not values_req.status_code == 404:
-                        values[f["slug"]] = values_req.json()
-                        f["is_bool"] = False
-                        _filters.append(f)
-                    #else:
-                        #print("Error", f["slug"])
-    return render_template('datasets.tpl', result=datasets, count=count, filters=_filters, values=values)
+    
+    _filters, values = build_filter_menu()                
+    return render_template('datasets.tpl', title="Datasets", lang="fr", page_title="Jeux de données", results=datasets, count=count, filters=_filters, values=values)
 
 @app.route('/datasets/<dataset_id>', methods=['GET'])
 def dataset_item(dataset_id):
-    print(dataset_id)
     req_datasets = requests.get(f"{API_ROOT_URL}/datasets/{dataset_id}")
     dataset = req_datasets.json()
-    # dataset["_id"] = str(dataset["_id"])
-    print(dataset)
-    return render_template('dataset.html', dataset=dataset)
+    rules = requests.get(API_ROOT_URL+"/references/meta/dataset")
+    ordered = sorted([(rule["section"],rule["slug"], int(rule["order"])) for rule in rules.json()], key=itemgetter(2))
+    dataset_section = {}
+    for section, filter_group in itertools.groupby(ordered, lambda f: f[0]):
+        print(section)
+        dataset_section[section] = []
+        for section, slug, order in filter_group:
+            # if order != -1:
+            try:
+                dataset_section[section].append({slug: dataset[slug]})
+            except KeyError:
+                pass 
+    return render_template('dataset.html', dataset= dataset, additionnal_info=dataset_section)
 
 @app.route("/organizations/", methods=["GET"])
 def organization_list():
@@ -152,11 +160,6 @@ def comment_list():
     references = req_refs.json()
     return render_template('references.tpl', references=references, count=len(references))
 
-@app.route("/search?", methods=["GET"])
-def get_users():
-    req_refs = requests.get(f"{API_ROOT_URL}/search/datasets/fr?q=eau%20CO2")
-    references = req_refs.json()
-    return(references)
 
 if __name__=="__main__":
 #     # os.getenv("FRONT_HOST")
