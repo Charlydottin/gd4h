@@ -7,13 +7,13 @@
 </button>  
 </li>
 <li>
-<button class="fr-btn fr-btn--secondary fr-fi-refresh-line" onClick="window.location.reload();" id="reset-filter">
+<button class="fr-btn fr-btn--secondary fr-fi-refresh-line" onclick="location.href='/datasets/" id="reset-filter">
     RESET
 </button></li>
 </ul>
 {%set target_label= "label_"+lang %}
 
-{{target_label}}
+
 <div class="fr-sidemenu__inner">
         {%for section, _filters in filters.items()%}
         {%if _filters|length > 0%}

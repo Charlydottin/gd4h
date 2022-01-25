@@ -7,7 +7,7 @@
     <p class="fr-card__desc">
         {{dataset["description"]["label_fr"]}}
         {%if query %}
-    
+        {{dataset["description"]}}
         <p class="">Match: <a href="#" class="fr-tag">{{dataset["score"]}}</a>
             {%if highlight in dataset %}
             <ul>{%for highlight, content in dataset["highlight"].items() %}
@@ -23,11 +23,11 @@
     <p class="fr-card__detail">
         {%for o in dataset["organizations"] %}  
             {%if query%}
-                <a href="/organizations/}}" class="fr-tag">{{o}}</a>
+                <a href="/organizations/" class="fr-tag">{{o.name}}</a>
             {%elif "_id" in o %}
                 <a href="/organizations/{{o['_id']['$oid']}}" class="fr-tag">{{o["name"]}}</a>
             {%else %}
-                <a href="/organizations/}}" class="fr-tag">{{o["name"]}}</a>
+                <a href="/organizations/" class="fr-tag">{{o["name"]}}</a>
             {%endif%}
         {%endfor%}
     </p>

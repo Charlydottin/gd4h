@@ -45,15 +45,16 @@
     var element = document.getElementById("datasets_list");
     $("button#reset-filter").click(function(){
         console.log("click");
-        $("#filter_nav").val() = "";
-        $("#filter_nav").append(filter_nav);
-        $("#datasets_list").append(element);
-        checkboxes = nav_filters.querySelectorAll('input[type="checkbox"]');
-        radios = nav_filters.querySelectorAll('input[type="radio"]');
-        checkboxes.prop('checked',false);
-        radios.prop('checked',false); 
+        //$("#filter_nav").val() = "";
+        //$("#filter_nav").append(filter_nav);
+        /$("#datasets_list").append(element);
+        //checkboxes = nav_filters.querySelectorAll('input[type="checkbox"]');
+        //radios = nav_filters.querySelectorAll('input[type="radio"]');
+        //checkboxes.prop('checked',false);
+        //radios.prop('checked',false); 
     });
     $("button#reset").click(function(){
+        $("#search_results").val() = '';
         $("#datasets_list").append(element);
     });
     $("button#search-btn").click(function(){
@@ -61,7 +62,7 @@
           $("#datasets_list").val() = '';
         }
         var user_query_arg = ($('#query').val());
-        alert(user_query_arg);
+        
         if (user_query_arg != ''){
           
         fetch('/search?query='+encodeURIComponent(user_query_arg))
@@ -96,7 +97,7 @@
           }
          });
         q = args.join("&");
-        alert(q);
+        //alert(q);
         fetch('/filter?'+q)
         .then(function(response) {
             $('#search_results').empty();
