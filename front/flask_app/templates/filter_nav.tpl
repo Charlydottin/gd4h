@@ -1,14 +1,23 @@
-    <nav class="fr-sidemenu" role="navigation" aria-label="Menu latéral">
+    <nav class="fr-sidemenu data-fr-js-sidemenu-list" id="filter_nav" role="navigation" aria-label="Menu latéral">
     <h4>Filtres de recherche</h4>
+    <button class="fr-btn fr-fi-filter-fill fr-btn--icon-left" id="select-all">
+    FILTER
+    </button> 
     
     {%for section, _filters in filters.items()%}
     
     <div class="fr-sidemenu__inner">
         <button class="fr-sidemenu__btn" aria-controls="fr-sidemenu-wrapper" aria-expanded="false">Dans cette rubrique</button>
         <div class="fr-collapse" id="fr-sidemenu-wrapper">
-            <div class="fr-sidemenu__title">{{section}}</div>
-            <ul class="fr-sidemenu__list">
-                {%if _filters|length > 0%}
+            
+            
+            {%if _filters|length > 0%}
+            <section id="{{section}}-{{loop.index}}" class="fr-accordion">
+              <h3 class="fr-accordion__title">
+              <button class="fr-accordion__btn" aria-expanded="false" aria-controls="fr-accordion-{{loop.index}}-body-{{loop.index}}" data-fr-js-collapse-button="true">{{section}}</button>
+              </h3>
+              <div class="fr-collapse" id="fr-accordion-{{loop.index}}-body-{{loop.index}}" data-fr-js-collapse="true" style="--collapse: -136px;">
+              <ul class="fr-sidemenu__list">
                 {%for _filter in _filters %}
                 
                 <li class="fr-sidemenu__item">
@@ -54,7 +63,7 @@
                     <label class="fr-label" for="select">
                       {{_filter["label_fr"]}}
                     </label>
-                    <select class="fr-select" id="select" name="select">
+                    <select class="fr-select" id="{{_filter['slug']}}" name="{{_filter['slug']}}">
                       {%for val in values[_filter["slug"]] %}
                       <option value="{{_filter["slug"]}}-{{val.label_fr}}">{{val.label_fr}}</option>
                       {%endfor%}
@@ -63,11 +72,16 @@
                   {%endif %}  
                 </li>
                 {%endfor%}
+              </ul>
               </div>
+              </div>
+              <section>
               {%endif%}
               {%endfor%}
-            <ul>
+            
+            
+            
         </div>
       </div>
-      </nav>
+  </nav>
         

@@ -78,6 +78,23 @@ def results():
     _filters, values = build_filter_menu()
     return jsonify({'data': render_template('search_results.tpl', lang="fr", page_title="Jeux de données", count=references["count"],results=references["results"], query=q, filters=_filters, values=values)})
     
+@cross_origin()
+@app.route("/filter")
+def filter():
+    arg_query=[]
+    for args,values in request.args.items():
+        if values in ["No", "Non"]:
+            values = "false"
+        elif values in ["Yes", "Oui"]:
+            values = "true"
+        arg_query.append(args+"="+values)
+    
+    arg_query = "&".join(arg_query)
+    results= requests.get(f"{API_ROOT_URL}/datasets/filter/fr?{arg_query}")
+    references = results.json()
+    _filters, values = build_filter_menu()
+    return jsonify({'data': render_template('search_results.tpl', lang="fr", page_title="Jeux de données", count=references["count"],results=references["results"],query=arg_query, filters=_filters, values=values)})
+
 
 @app.route('/datasets/', methods=['GET', 'POST'])
 def dataset_list():

@@ -9,11 +9,13 @@
         {%if query %}
     
         <p class="">Match: <a href="#" class="fr-tag">{{dataset["score"]}}</a>
+            {%if highlight in dataset %}
             <ul>{%for highlight, content in dataset["highlight"].items() %}
                 <li>{{highlight}}: {{content[0]}}</li>
-            {%endfor%}
+                {%endfor%}
             </ul>
             </p>
+            {% endif %}
         {%endif%}
         </p>
     
