@@ -139,9 +139,17 @@ source .env
 #### Initialize database
 
 ```
-source .venv/bin/activate
+source gd4h/back/.venv/bin/activate
 cd back/scripts/
-python init_db.py
+python script/init_db.py
+```
+
+#### Indexing content
+
+```
+source back/.venv/bin/activate
+cd scripts/
+python create_index.py
 ```
 
 ### FRONT
@@ -246,3 +254,4 @@ WantedBy=multi-user.target
 ```
 
 `sudo systemctl start gd4h-front.service`
+
