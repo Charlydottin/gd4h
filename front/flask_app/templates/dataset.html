@@ -1,54 +1,91 @@
 {% extends "base.tpl" %}
 {% set active_page = "datasets" %}
+{%set target_label= "label_"+lang %}
 
 {% block tagline %}Recensement des données en Santé Environnement{% endblock %}
 {%block content%}
-
-<div class="fr-container fluid fr-py-2w">
-  <button class="fr-btn fr-fi-arrow-left-s-line fr-btn--icon-left">
-    <a href="/datasets/" class="fr-card__link">Retour à la liste des jeux de données</a>
+<button class="fr-btn fr-fi-arrow-left-s-line fr-btn--icon-left">
+  <a href="/datasets/" class="fr-card__link">Retour à la liste des jeux de données</a>
 </button>
 
-  
-  <p>
-    <h3>
-        <a href="/datasets/{{dataset['_id']['$oid']}}/" class="fr-card__link">{{dataset["name"]}}</a>
-       {% if dataset["acronym"] != "" %}
-        {{dataset["acronym"]}}
-       {%endif%}
-     </h3>
-    
-    <p class="fr-card__desc">{{dataset["description"]["label_fr"]}}</p>
-    <p class="fr-card__detail">
-     {%for o in dataset["organizations"] %}  
-     <a href="/organization/{{o['_id']['$oid']}}" class="fr-tag">{{o["name"]}}</a>
-     
-     {%endfor%}
-     </p>
-     <a class="fr-link fr-fi-arrow-right-line fr-link--icon-right" href="{{dataset['url']}}">{{dataset['url']}}</a>
+<div class="fr-callout">
+  <p class="fr-callout__title">
+    <a href="/datasets/{{dataset['_id']['$oid']}}/" class="fr-card__link">{{dataset["name"]}}</a>
+    {% if dataset["acronym"] != "" %}
+    - {{dataset["acronym"]}}
+   {% endif %}
   </p>
-  <p>
-  {% for section, field in additionnal_info.items() %}
-  <ul><h4>{{section}}</h4>
-    {%for f in field%}
-    {%for k,v in f.items()%}  
-      <li><b>{{k}}</b>: {{v}}</li>
-      {%endfor%}  
+  <p class="fr-callout__text">
+    {{dataset["description"][target_label]}}
+  </p>
+  <p class="fr-callout__text"></p>
+    {%for o in dataset["organizations"] %}  
+    <a href="/organization/{{o['_id']['$oid']}}" class="fr-tag fr-tag--new "><b>{{o["name"]}}</b></a>
     {%endfor%}
-  </ul>
-    
-  {% endfor %}
-  </p> 
+  </p>
+  <p class="fr-callout__text"></p>
+  <a href="{{dataset['url']}}" class="fr-link fr-fi-arrow-right-line fr-link--icon-right">{{dataset['url']}}</a>
+  </p>
 </div>
+<div class="fr-container fluid fr-py-2w">
+{%include 'button_reaction_dataset.tpl' %}
+</div>
+<div class="fr-container fluid fr-py-2w">
+    {% for section, fields in additionnal_info.items() %}
+      <div class="fr-grid-row">
+        <div class="fr-col">
+        
+        <h4 class="fr-card__title">
+          <a href="#" class="fr-card__link">{{section}}</a>
+        </h4>
+        <p class="fr-card__desc">
+          {% for field in fields%}
+        {%for key,value in field.items()%}
+        <li>
+        {%if "comment" not in key %}
+        <b>{{key}}:</b>
+        {%if value is string%}
+        <span class="fr-tag">{{value}}</span>
+        {% elif value is mapping %}
+          <span class="fr-tag">{{value.label_fr}}</span>
 
+        {% elif value is iterable %}
+        <ul class="fr-btns-group fr-btns-group--inline">
+        {% for v in value%}
+          {%if v is mapping %}
+          <li><span class="fr-tag">{{v.label_fr}}</span></li>
+          {%else%}
+          <li><span class="fr-tag">{{v}}</span></li>
+           {%endif%}
+          {%endfor%}
+        </ul>
+        
+        {% else %}
+        <span class="fr-tag">{{value}}</span>
+        {%endif%}
+        {%else%}
+        <b>{{key}}</b>
+        {% for v in value%}
+        <p>{{v.label_fr}}</p>
+        {%endfor%}  
+        <button class="fr-btn fr-btn fr-fi-chat-quote-line fr-btn--icon-right fr-btn--icon-left">{{key}}</button>
+        
+        {%endif%}
+        </li>
+          {%endfor%}
+          </ul>
+        {%endfor%}
+      </div>
+    </div>
+    {%endfor%}
+  
+</div>
+  
 {%endblock%}
 
 {%block script%}
-  // Options disponibles à l'initialisation du DSFR
-  window.dsfr = {
-    verbose: true,
-    mode: 'manual'
-  };
+<script>
 
+</script>
 <!-- Script en version es6 module et nomodule pour les navigateurs le ne supportant pas -->
 {%endblock%}
