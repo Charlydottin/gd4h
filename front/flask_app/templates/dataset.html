@@ -16,7 +16,11 @@
    {% endif %}
   </p>
   <p class="fr-callout__text">
-    {{dataset["description"][target_label]}}
+    {%if "description" in dataset %}
+      {% if target_label in dataset["description"] %}
+        {{dataset["description"][target_label]}}
+      {%endif%}
+    {%endif%}
   </p>
   <p class="fr-callout__text"></p>
     {%for o in dataset["organizations"] %}  
