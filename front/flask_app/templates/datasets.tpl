@@ -56,6 +56,9 @@
         if ($("#datasets_list").val() != ""){
           $("#datasets_list").val() = '';
         }
+        if ($("#search_results").val() != ""){
+          $("#search_results").val() = '';
+        }
         var user_query_arg = ($('#query').val());
         
         if (user_query_arg != ''){
