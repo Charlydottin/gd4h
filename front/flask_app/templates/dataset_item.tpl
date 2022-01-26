@@ -2,7 +2,11 @@
 <div class="fr-card fr-card--horizontal fr-enlarge-link">
 <div class="fr-card__body">
     <h4 class="fr-card__title">
-        <a class="fr-card__link" href="/datasets/{{dataset['_id']['$oid']}}">{{dataset["name"]}}</a>
+        {%if query %}
+            <a class="fr-card__link" href="/datasets/{{dataset['_id']}}">{{dataset["name"]}}</a>
+        {%else %}
+            <a class="fr-card__link" href="/datasets/{{dataset['_id']['$oid']}}">{{dataset["name"]}}</a>
+        {%endif%}
     </h4>
     <p class="fr-card__desc">
         {{dataset["description"]["label_fr"]}}
@@ -21,16 +25,19 @@
     
     
     <p class="fr-card__detail">
-        {%for o in dataset["organizations"] %}  
-            {%if query%}
-                <a href="/organizations/" class="fr-tag">{{o.name}}</a>
-            {%elif "_id" in o %}
+        {%for o in dataset["organizations"] %}
+            {%if "_id" in o %}
                 <a href="/organizations/{{o['_id']['$oid']}}" class="fr-tag">{{o["name"]}}</a>
             {%else %}
                 <a href="/organizations/" class="fr-tag">{{o["name"]}}</a>
             {%endif%}
         {%endfor%}
     </p>
-    <a href="/datasets/{{dataset['_id']['$oid']}}" class="fr-card__link"></a>
+    {%if query %}
+            <a class="fr-card__link" href="/datasets/{{dataset['_id']}}"></a>
+    {%else %}
+        <a class="fr-card__link" href="/datasets/{{dataset['_id']['$oid']}}"></a>
+    {%endif%}
+        
 </div>
 </div>
