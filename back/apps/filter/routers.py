@@ -66,7 +66,7 @@ async def get_rules(rule: str, request: Request):
 
 
 @router.get("/rules/{slug}", response_description="Get rule for field")
-async def get_rules(rule: str, request: Request):
+async def get_rules(slug: str, request: Request):
     facets = []
     for doc in await request.app.mongodb["meta_fields"].find({"slug": slug}, {"_id":0}).to_list(length=200):
         facets.append(doc)
