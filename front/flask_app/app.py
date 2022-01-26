@@ -117,7 +117,6 @@ def dataset_item(dataset_id):
     ordered = sorted([(rule["section"],rule["slug"], int(rule["order"])) for rule in rules.json()], key=itemgetter(2))
     dataset_section = {}
     for section, filter_group in itertools.groupby(ordered, lambda f: f[0]):
-        print(section)
         dataset_section[section] = []
         for section, slug, order in filter_group:
             # if order != -1:
@@ -125,6 +124,7 @@ def dataset_item(dataset_id):
                 dataset_section[section].append({slug: dataset[slug]})
             except KeyError:
                 pass 
+    
     return render_template('dataset.html', dataset= dataset, additionnal_info=dataset_section)
 
 @app.route("/organizations/", methods=["GET"])
