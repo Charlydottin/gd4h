@@ -7,8 +7,13 @@
 <button class="fr-btn fr-fi-arrow-left-s-line fr-btn--icon-left">
   <a href="/datasets/" class="fr-card__link">Retour à la liste des jeux de données</a>
 </button>
-<code>{{dataset}}</code>
-<code>{{additionnal_info}}</code>
+{%if detail in dataset%}
+<div class="fr-alert fr-alert--error">
+  <p class="fr-alert__title">Erreur : Not found!</p>
+  <p>Dataset not found!</p>
+</div>
+
+{%else%}
 <div class="fr-callout">
   <p class="fr-callout__title">
     <a href="#" class="fr-card__link">{{dataset["name"]}}</a>
@@ -85,7 +90,7 @@
     {%endfor%}
   
 </div>
-  
+{%endif%}  
 {%endblock%}
 
 {%block script%}
