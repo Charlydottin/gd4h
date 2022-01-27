@@ -11,9 +11,13 @@ curr_dir = os.getcwd()
 # print(curr_dir)
 parent = os.path.dirname(os.getcwd())
 data_dir = os.path.join(curr_dir, "data")
-print(data_dir)
-metadata_doc = os.path.abspath(os.path.join(data_dir, "meta", "rules.csv"))
-reference_doc = os.path.abspath(os.path.join(data_dir, "meta", "references_tables.csv"))
+meta_dir = os.path.join(data_dir, "meta")
+
+dataset_dir = os.path.join(data_dir, "dataset")
+organization_dir = os.path.join(data_dir, "organization")
+
+
+
 
 
 DATABASE_NAME = "GD4H_V1"
@@ -40,8 +44,8 @@ def init_data():
 
 def init_meta():
     DB.meta_fields.drop()
-    create_meta_fields()
-    DB.meta_references.drop()
+    DB.rules.drop()
+    create_rules()
     DB.references.drop()
     create_references()
     create_ref_tables()
@@ -58,36 +62,37 @@ def translate(text, _from="fr"):
         return en_fr.translate(text)
     
 
-def create_meta_fields():
-    coll_name = "meta_fields"
+def create_rules():
+    coll_name = "rules"
     DB[coll_name].drop()
-    print(f"Creating {coll_name}")
-    with open(metadata_doc, "r") as f:
+    rules_doc = os.path.join(meta_dir,"rules.csv")
+    print(f"Creating {coll_name} table")
+    with open(rules_doc, "r") as f:
         reader = DictReader(f, delimiter=",")
         for row in reader:
             if row["slug"] == "":
                 break
             else:
                 for k,v in row.items():
+                    if k == "external_model_display_keys":
+                        row[k] == v.split("|")
                     if v == "True":
                         row[k] = True
                     if v == "False":
                         row[k] = False
                 
-                # print(row["slug"], row["translation"], row["multiple"], row["is_controled"])            
             _id = DB[coll_name].insert_one(row).inserted_id
-    # print(DB[coll_name].find_one({"slug":"acronym", "model": "Dataset"}))
-    pipeline = [ {'$project': {"id": {'$toString': "$_id"}, "_id": 0,"value": 1}}]
-    DB[coll_name].aggregate(pipeline)
+        print(_id)
 
 def create_references():        
+    
     coll_name = "references"
     DB[coll_name].drop()
-    print(f"Creating {coll_name}")
+    print(f"Creating {coll_name} table")
     with open(reference_doc, "r") as f:
         reader = DictReader(f, delimiter=",")
         for row in reader:
-            print(row)
+            
             if row["tablename"] == "":
                 break
             row["tablename"] = "ref_"+ row["fieldname"]
@@ -96,7 +101,7 @@ def create_references():
     DB[coll_name].aggregate(pipeline)
             
 def create_ref_tables():
-    print(f"Creating meta_references")
+    reference_doc = os.path.join(meta_dir, "references.csv")
     for ref in DB["references"].find({}, {"_id":0}):
         ref_file =  os.path.join(data_dir, "references", ref["tablename"]+".csv")
         coll_name = ref["tablename"]
@@ -107,20 +112,13 @@ def create_ref_tables():
                 reader = DictReader(f, delimiter=",")
                 for row in reader:
                     _id = DB[coll_name].insert_one({k.strip(): v.strip() for k,v in row.items() if v is not None}).inserted_id
-                    # print(_id)
         except FileNotFoundError:
             DB["references"].update_one({"fieldname":ref["fieldname"]}, {"$set":{"status": False, "msg": "No corresponding file references found"}})
             CENSUS_DB = mongodb_client["census"]
             values = CENSUS_DB.datasets.distinct(ref["fieldname"])
             for v in values:
                 _id = DB[coll_name].insert_one({"label_fr":v, "label_en": None, "uri": None}).inserted_id
-    pipeline = [ {'$project': {"id": {'$toString': "$_id"}, "_id": 0,"value": 1}}]
-    DB["references"].aggregate(pipeline)
-            
-    errors = DB["references"].find({"status": False})
-    for e in errors:
-        print("Error", e)
-
+    
 def create_default_users():
     default_users = [{
         "email": "constance.de-quatrebarbes@developpement-durable.gouv.fr", 
