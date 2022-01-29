@@ -1,31 +1,39 @@
 #!/usr/bin/env python3
+from asyncore import write
+import enum
+from gettext import translation
+import itertools
 import os
 import datetime
+from termios import BSDLY
 import bleach
 from pymongo import MongoClient
 from csv import reader, writer, DictReader, DictWriter
 from copy import copy
+import json
 from argostranslate import package, translate
+from pydantic import create_model 
+from typing import Optional, List
+from itertools import groupby
+from bson.objectid import ObjectId as BsonObjectId
+import pymongo
 
-curr_dir = os.getcwd()
-# print(curr_dir)
-parent = os.path.dirname(os.getcwd())
-data_dir = os.path.join(curr_dir, "data")
+curr_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(curr_dir)
+data_dir = os.path.join(parent_dir, "data")
 meta_dir = os.path.join(data_dir, "meta")
 
 dataset_dir = os.path.join(data_dir, "dataset")
 organization_dir = os.path.join(data_dir, "organization")
 
 
-
-
-
-DATABASE_NAME = "GD4H_V1"
+DATABASE_NAME = "GD4H_V2"
 mongodb_client = MongoClient("mongodb://localhost:27017")
 DB = mongodb_client[DATABASE_NAME]
 
 AVAILABLE_LANG = ["fr","en"]
 SWITCH_LANGS = dict(zip(AVAILABLE_LANG,AVAILABLE_LANG[::-1]))
+
 installed_languages = translate.get_installed_languages()
 fr_en = installed_languages[1].get_translation(installed_languages[0])
 en_fr = installed_languages[0].get_translation(installed_languages[1])
@@ -36,24 +44,23 @@ def init():
 
 def init_data():
     DB.organizations.drop()
-    import_organizations_from_csv()
+    import_organizations()
     DB.datasets.drop()
-    import_dataset_from_csv()
-    link_organizations_to_datasets()
-    register_comments_from_datasets()
+    import_dataset()
+    link_organizations()
+    register_comments()
 
 def init_meta():
-    DB.meta_fields.drop()
     DB.rules.drop()
-    create_rules()
+    import_rules()
     DB.references.drop()
-    create_references()
-    create_ref_tables()
+    import_references()
     DB.logs.drop()
     DB.users.drop()
     create_default_users()
-    translate_fr_references()
-    translate_en_references()
+    # translate_fr_references()
+    # translate_en_references()
+
 
 def translate(text, _from="fr"):
     if _from == "fr":
@@ -62,7 +69,7 @@ def translate(text, _from="fr"):
         return en_fr.translate(text)
     
 
-def create_rules():
+def import_rules():
     coll_name = "rules"
     DB[coll_name].drop()
     rules_doc = os.path.join(meta_dir,"rules.csv")
@@ -76,49 +83,81 @@ def create_rules():
                 for k,v in row.items():
                     if k == "external_model_display_keys":
                         row[k] == v.split("|")
-                    if v == "True":
+                    elif v == "True":
                         row[k] = True
-                    if v == "False":
+                    elif v == "False":
                         row[k] = False
-                
+                    else:
+                        try:
+                            row[k] = int(v)
+                        except ValueError:
+                            row[k] = str(v)
             _id = DB[coll_name].insert_one(row).inserted_id
-        print(_id)
+            
 
-def create_references():        
-    
-    coll_name = "references"
-    DB[coll_name].drop()
-    print(f"Creating {coll_name} table")
-    with open(reference_doc, "r") as f:
-        reader = DictReader(f, delimiter=",")
-        for row in reader:
+def import_references():
+    ''' Import references and each ref_table into db tables
+    translate missing field fr or en 
+
+    '''
+    reference = {"model": "reference"}
+    for ref_table in DB.rules.distinct("reference_table"):
+        print(ref_table)
+        if ref_table != "":
+            DB[ref_table].drop()
+            print(f"Creating {ref_table} table")
+            reference["table_name"] = ref_table
+            reference["field_slug"] =  ref_table.replace("ref_", "")
+            ref_file =  os.path.join(data_dir, "references", ref_table+".csv")
+            refs = [] 
+            try:
+                with open(ref_file, "r") as f:
+                    
+                    reader = DictReader(f, delimiter=",")
+                    for row in reader:
+                        clean_row = {k.strip(): v.strip() for k,v in row.items() if v is not None}
+                        print("translating missing values")
+                        try:
+                            if clean_row["name_en"] != "" and clean_row["name_fr"] == "":
+                                clean_row["name_fr"] = translate(clean_row["name_en"], _from="en")
+                            if clean_row["name_fr"] != "" and clean_row["name_en"] =="":
+                                clean_row["name_en"] = translate(clean_row["name_fr"], _from="fr")
+                        except KeyError:
+                            pass
+                        
+                        if "root_uri" in clean_row:
+                            reference["root_uri"] = row["root_uri"]
+                        if "root_uri" not in clean_row and "uri" in clean_row:
+                            if clean_row["uri"] != "":
+                                reference["root_uri"] = "/".join(row["uri"].split("/")[:-1])
+                        refs.append(row)            
+                        try:
+                            ref_id = DB[ref_table].insert_one(clean_row)
+                        except pymongo.errors.DuplicateKeyError:
+                            pass
+                with open(ref_file, "w") as f:        
+                    one_record = DB[ref_table].find_one({}, {"_id":0})
+                    if one_record is not None:
+                        fieldnames = list(one_record.keys())
+                        print(fieldnames)
+                        writer = DictWriter(f, delimiter=",",fieldnames=fieldnames)
+                        writer.writeheader()
+                        for row in DB[ref_table].find({}, {"_id":0}):
+                            writer.writerow(row)
+                reference["references"] = refs
+                reference["status"] = True
+            except FileNotFoundError:
+                print(f"Error! required reference {ref_table} has no corresponding file {ref_file}")
+                reference["status"] = False
+            try:
+                DB.references.insert_one(reference)
+            except pymongo.errors.DuplicateKeyError:
+                pass
             
-            if row["tablename"] == "":
-                break
-            row["tablename"] = "ref_"+ row["fieldname"]
-            _id = DB[coll_name].insert_one(row).inserted_id
-    pipeline = [ {'$project': {"id": {'$toString': "$_id"}, "_id": 0,"value": 1}}]
-    DB[coll_name].aggregate(pipeline)
-            
-def create_ref_tables():
-    reference_doc = os.path.join(meta_dir, "references.csv")
-    for ref in DB["references"].find({}, {"_id":0}):
-        ref_file =  os.path.join(data_dir, "references", ref["tablename"]+".csv")
-        coll_name = ref["tablename"]
-        DB[coll_name].drop()
-        print(f"Creating {coll_name}")
-        try:
-            with open(ref_file, "r") as f:
-                reader = DictReader(f, delimiter=",")
-                for row in reader:
-                    _id = DB[coll_name].insert_one({k.strip(): v.strip() for k,v in row.items() if v is not None}).inserted_id
-        except FileNotFoundError:
-            DB["references"].update_one({"fieldname":ref["fieldname"]}, {"$set":{"status": False, "msg": "No corresponding file references found"}})
-            CENSUS_DB = mongodb_client["census"]
-            values = CENSUS_DB.datasets.distinct(ref["fieldname"])
-            for v in values:
-                _id = DB[coll_name].insert_one({"label_fr":v, "label_en": None, "uri": None}).inserted_id
+
+    print("Created references table")
     
+
 def create_default_users():
     default_users = [{
         "email": "constance.de-quatrebarbes@developpement-durable.gouv.fr", 
@@ -152,7 +191,6 @@ def create_comment(username, text="Ceci est un commentaire test"):
     default_user = DB.users.find_one({"username": username}, {"username": 1, "lang": 1})
     if default_user is None:
         raise Exception(username, "not found")
-    
     default_lang = default_user["lang"]
     clean_text = bleach.linkify(bleach.clean(text))
     alternate_lang = SWITCH_LANGS[default_lang]
@@ -165,9 +203,7 @@ def register_comment(comment, perimeter, scope, ref_id):
     comment["scope"] = scope #field
     comment["ref_id"] = ref_id
     DB.comments.insert_one(comment)
-    # pipeline = [ {'$project': {"id": {'$toString': "$_id"}, "_id": 0,"value": 1}}]
-    # DB["comments"].aggregate(pipeline)
-
+    
 
 
 def create_logs(username, action, perimeter, status=True,  message="OK", scope=None, ref_id=None):
@@ -194,108 +230,50 @@ def create_logs(username, action, perimeter, status=True,  message="OK", scope=N
                 "message": message
             }
 
-def create_license():
-    for license_name in DB.ref_license_name.distinct("license_name"): 
-        print(license_name)
-    # for licence_n in DB.datasets.distinct("license_name"):
-    #     if licence_n != "" and licence_n is not None:
-    #         print(licence_n)
-    #         match = DB.datasets.find_one({"license_name":licence_n}, {"license_name":1, "license_type": 1, "is_opensource":1, "_id":0})
-    #         name = licence_n
-    #         ltype = [DB.ref_license_type.find_one({"label_fr": n}, {"_id":0, "slug":1}) for n in match["license_type"]]
-    #         is_opendata = match["is_opensource"]
-    #         DB.licenses.insert_one({"name":name, "type": ltype, "is_opendata": is_opendata})
-        # if licence_n != "" and licence_n is not None:
-        #     for l in CENSUS_DB.datasets.find({"license_name":licence_n}, {"license_type": 1, "is_opensource":1}):
-                
-        #         if license_name is not None:
-        #             license = { 
-        #                 "name": license_name,
-        #                 "type":[DB.ref_license_type.find_one({"label_fr":n}, {"_id":0}) for n in l["license_type"]], 
-        #                 "is_opendata":l["is_opensource"]
-        #             }
-        #             if DB.licenses.find_one({"name.0.label_fr": licence_n}) is None:
-                        # DB.licenses.insert_one(license)                
-                
-def import_organizations_from_csv():
-    print("Create Organizations")
-    org_doc = os.path.abspath(os.path.join(data_dir, "organizations", "census_organizations.csv"))
+             
+def get_not_translated_fields(model="organization"):
+    fields = DB.rules.find({"model": model, "translation": False}, {"slug":1})
+    return [f["slug"] for f in fields]
+def get_translated_fields(model="organization"):
+    fields = DB.rules.find({"model": model, "translation": True}, {"slug":1, "is_controled": 1, "reference_table":1})
+    # for f in fields:
+    #     if f["is_controled"]:
+    #         DB[f["reference_table"]].distinct()
+    return [f["slug"] for f in fields]
+
+def get_rule(model, field_slug):
+    rule = DB.rules.find_one({"model": model, "slug": field_slug})
+    return rule
+
+def import_organizations():
+    DB.organizations.drop()
+    org_doc = os.path.abspath(os.path.join(data_dir, "organizations", "organizations_fr.csv"))
+    print(f"Create Organizations by inserting {org_doc}")
     with open(org_doc, "r") as f:
         reader = DictReader(f, delimiter=",")
         for row in reader:
-            agent_type = row["agent_type_uri"]
-            row["agent_type"] = DB.ref_agent_type.find_one({"uri":agent_type})
-            del row["agent_type_uri"]
-            org_type = row["organization_type"]
-            row["organization_type"] = DB.ref_organization_type.find_one({"label_fr":org_type})
-            if row["organization_type"] is None:
-                DB.ref_organization_type.insert_one({"label_fr": org_type, "label_en": translate(org_type)})
-                row["organization_type"] = DB.ref_organization_type.find_one({"label_fr":org_type})
-            org = DB.organizations.insert_one(row)
-            create_logs("admin","create", "organization", True, "OK", scope=None, ref_id=org.inserted_id)
-    pipeline = [ {'$project': {"id": {'$toString': "$_id"}, "_id": 0,"value": 1}}]
-    DB.organizations.aggregate(pipeline)
-
-def get_field_rule(model, slug):
-    correspondancy_value_rule = {
-        "contact_comments":"contact_type_comments",
-        "spatial_geographical_coverage": "geographical_geospatial_coverage",
-        "is_opensource": "is_opendata",
-    }
-    rule = DB.meta_fields.find_one({"model": model, "slug":slug}, {"_id":0, "model":0})
-    if rule is not None:
-        return slug, rule
-    else:
-        try:
-            new_slug = correspondancy_value_rule[slug]
-            new_rule = DB.meta_fields.find_one({"model": model, "slug":new_slug}, {"_id":0, "model":0})
-            if new_rule is not None:
-                return new_slug, new_rule
-        except KeyError:
-            pass
-    return slug, None
-
-def get_field_slugs_for_model(model="Dataset"):
-    return sorted([n["slug"]for n in DB.meta_fields.find({"model": model}, {"_id":0, "slug":1})])
+            org = {"fr": {},"en": {}}
+            org["fr"] = row
+            org["en"] = {k: v for k,v in row.items() if get_not_translated_fields("organization")} 
+            for translated_field in  get_translated_fields("organization"):
+                rule = get_rule("organization", translated_field)
+                try:
+                    value = row[translated_field] 
+                    if rule["is_controled"]:
+                        accepted_ref = DB[rule["reference_table"]].find_one({"label_fr": value}, {"label_en":1})
+                        try:
+                            value = accepted_ref["label_en"]
+                        except: 
+                            value = accepted_ref
+                except KeyError:
+                    value = None
+                org["en"][translated_field] = value
+            db_org = DB.organizations.insert_one(org)
+            create_logs("admin","create", "organization", True, "OK", scope=None, ref_id=db_org.inserted_id)
+    print(DB.organizations.count_documents({}), "organization inserted")
 
 
-def format_value_with_declared_datatype(rule, value):
-    if rule["datatype"] == "str":
-        if value == "":
-            return None
-        try:
-            assert isinstance(value, str)
-            return value
-        except AssertionError:
-            return str(value)
-                            
-    elif rule["datatype"] == "bool":
-        try:
-            assert isinstance(value, bool)
-            return value
-        except AssertionError:
-            return bool(value)
 
-    elif rule["datatype"] == "int":
-        try:
-            assert isinstance(value, int)
-        except AssertionError:
-            try:
-                return int(value)
-            except ValueError:
-                return None
-
-    else:
-        if value == "":
-            return None        
-        else:
-            return value
-
-def reference_table_exists(reference_table):
-    if DB[reference_table].count_documents({}) > 0:
-        return DB[reference_table]["status"]
-    else:
-        return False   
 
 def find_reference_by_label_fr(reference_table, value):
     external_ref = DB[reference_table].find_one({"label_fr": value})
@@ -314,11 +292,11 @@ def find_reference_by_label_en(reference_table, value):
         error_msg = "ERROR: reference value '{}' not found in '{}' as 'label_en'".format(value, reference_table)
         return False, error_msg
 
-def import_dataset_from_csv():
+
+def import_datasets():
     print("Create Datasets")
     created_datasets = []
     datasets_doc = os.path.abspath(os.path.join(data_dir, "datasets", "census_datasets_fr.csv"))
-    
     with open(datasets_doc, "r") as f:
         reader = DictReader(f, delimiter=",")
         for row in reader:
@@ -427,12 +405,11 @@ def link_organizations_to_datasets():
         DB.logs.insert_one(log)
     print("Missing orgs ", set(not_found_orgs))
     
-def register_comments_from_datasets():
+def register_dataset_comments():
     dataset = DB.datasets.find_one()
     comments_fields =  {key:1 for key in dataset if "comment" in key}
     comments_fields["_id"] = 1
     for dataset in DB.datasets.find({}, comments_fields):
-        
         dataset_id = dataset["_id"]
         del dataset["_id"]
         for k,v in dataset.items():
@@ -440,12 +417,6 @@ def register_comments_from_datasets():
                 register_comment(c, "dataset", k, dataset_id)
 
 def translate_datasets():
-    
-    # labels = [f"label_{l}" for l in AVAILABLE_LANG]
-    # print(labels)
-    # last_log = DB.logs.find_one({"perimeter":"dataset", "action":{"$in": ["create"]}}, sort=[("date", pymongo.DESCENDING)])
-    # last_user = DB.users.find_one({"username":last_log["user"]})
-    
     for dataset in DB.datasets.find({}):
         for k,v in dataset.items():
             if isinstance(v, dict):
@@ -494,7 +465,6 @@ def translate_fr_references():
     for tablename in DB.references.distinct("tablename"):
         for ref_value in DB[tablename].find({"$or":[{"label_en": ""},{"label_en": None}], "label_fr":{"$nin": ["", None]}}, {"_id":1, "label_fr":1}):
             try: 
-                
                 value_en = translate(ref_value["label_fr"], _from="fr")
                 DB[tablename].update_one({"_id": ref_value["_id"]}, {"$set": {"label_en": value_en} })
             except KeyError:
@@ -509,7 +479,180 @@ def translate_en_references():
                 DB[tablename].update_one({"_id": ref_value["_id"]}, {"$set": {"label_fr": value_fr} })
             except KeyError:
                 pass
+
+def translate_missing_references():
+    for tablename in DB.references.distinct("tablename"):
+        for ref_value in DB[tablename].find({"$or":[{"label_en": ""},{"label_en": None}], "label_fr":{"$nin": ["", None]}}, {"_id":1, "label_fr":1}):
+            try: 
+                value_en = translate(ref_value["label_fr"], _from="fr")
+                DB[tablename].update_one({"_id": ref_value["_id"]}, {"$set": {"label_en": value_en} })
+            except KeyError:
+                pass
+    for tablename in DB.references.distinct("tablename"):
+        for ref_value in DB[tablename].find({"$or":[{"label_fr": ""},{"label_fr": None}], "label_en":{"$nin": ["", None]}}, {"_id":1, "label_en":1}):
+            try: 
+                
+                value_fr = translate(ref_value["label_en"], _from="en")
+                DB[tablename].update_one({"_id": ref_value["_id"]}, {"$set": {"label_fr": value_fr} })
+            except KeyError:
+                pass
+
+def return_type_example(datatype):
+    if datatype == "dict":
+        return "object", {}
+    elif datatype == "bool":
+        return "boolean", False
+    elif datatype == "id":
+        return "string", "61f39f8a701f929ed50e61be" 
+    elif datatype == "int":
+        return "number", 1
+    elif datatype == "date":
+        return "date", "2017-01-01"
+    else:
+        return "string", ""
+def gen_json_item(rule, lang="fr"):
+    
+    field_json = {
+                    "name": rule["slug"],
+                    "title": rule["label_"+lang],
+                    "description": rule["description_"+lang], 
+                }
+    str_datatype, example = return_type_example(rule["datatype"])
+    if rule["multiple"]:
+        field_json["type"] = "array"
+        field_json["items"] = {"type": str_datatype}
+        field_json["example"] = [example]
+    else: 
+        field_json["type"] = str_datatype
+        field_json["example"] = example    
+    if rule["mandatory"]:
+        field_json["constraints"] = {"required": True}
+    
+    if rule["reference_table"] != "":
+        enum_values = DB[rule["reference_table"]].distinct("label_"+lang)
+        if "constraints" in field_json:
+            field_json["constraints"]["enum"] = enum_values
+        else:
+            field_json["constraints"] = {
+                "enum": enum_values            
+            }
+    if rule["constraint"] == "unique":
+        if "constraints" in field_json:
+            field_json["constraints"]["unique"] = True
+        else:
+            field_json["constraints"] = {
+                "unique": True            
+            }
+    
+    # if rule["external_model"] != "":
+    #     field_json["type"] = [
+    #                     "object",{"$ref":"https://github.com/c24b/gd4h/catalogue/raw/v0.0.1/{}-schema.json".format(rule["external_model"])}
+    #     ]
+    return field_json
+def create_json_m_simple():
+    
+    {
+        "title": "{dataset_model}",
+        "type": "object",
+        "properties": {
+        }
+    }
+    property_item = { "title": "{Model}",
+            "default": "dataset",
+            "type": "string"}
+def create_json_model():
+    '''generate JSON empty file from rules table'''
+    rules = [rule for rule in DB["rules"].find({},{})]
+    
+
+    final_models = {}
+    for  model_name, field_rules in itertools.groupby(rules, key=lambda x:x["model"]):
+        print(model_name)
+        field_rules = list(field_rules)
+        is_multilang_model = any([r["translation"] for r in field_rules])
+        if is_multilang_model:
+            for lang in AVAILABLE_LANG:
+                root_schema = {
+                "$schema": "https://frictionlessdata.io/schemas/table-schema.json",
+                "name": f"{model_name}_{lang}",
+                "title": "{} - {}".format(model_name.title(), lang),
+                "description": f"Spécification du modèle de données {model_name} relatif au catalogue des jeux de données Santé Environnement du GD4H",
+                "contributors": [
+                    {
+                    "title": "GD4H",
+                    "role": "author"
+                    },
+                    {
+                    "title": "Constance de Quatrebarbes",
+                    "role": "contributor"
+                    }
+                ],
+                "version": "0.0.1",
+                "created": "2022-01-28",
+                "lastModified": "2022-01-28",
+                "homepage": "https://github.com/c24b/gd4h/",
+                "$id": f"{model_name}_{lang}-schema.json",
+                "path": f"https://github.com/c24b/gd4h/catalogue/raw/v0.0.1/{model_name}_{lang}-schema.json",
+                "type":object,
+                "properties":[
+
+                ]
+                }
+                for rule in field_rules:
+                    root_schema["properties"].append(gen_json_item(rule, lang))
+                yield root_schema
+                root_schema["properties"] = []
+        else:
+            root_schema = {
+                "$schema": "https://frictionlessdata.io/schemas/table-schema.json",
+                "name": f"{model_name}",
+                "title": f"{model_name.title()} Simplifié",
+                "description": f"Spécification du modèle de données {model_name.title()} relatif au catalogue des jeux de données Santé Environnement du GD4H",
+                "contributors": [
+                    {
+                    "title": "GD4H",
+                    "role": "author"
+                    },
+                    {
+                    "title": "Constance de Quatrebarbes",
+                    "role": "contributor"
+                    }
+                ],
+                "$id": f"{model_name}-schema.json",
+                "version": "0.0.1",
+                "created": "2022-01-28",
+                "lastModified": "2022-01-28",
+                "homepage": "https://github.com/c24b/gd4h/",
+                "path": f"https://github.com/c24b/gd4h/catalogue/raw/v0.0.1/{model_name}-schema.json".format(model_name),
+                "properties":[
+
+                ]
+            }
+            for rule in field_rules:
+                root_schema["properties"].append(gen_json_item(rule, "en"))
+            yield root_schema
+    
+def write_json_model():
+    for json_schema in create_json_model():
+        with open(os.path.join(data_dir, "schemas", json_schema["$id"]), "w") as f:
+            f.write(json.dumps(json_schema, indent=4))
+            print(json_schema["$id"], "ready!")
+
+def create_json_rules_model():
+    rule_model = create_model("Rules", **DB.rules.find_one({},{"_id":0}))
+    rule_json_schema = rule_model.schema_json()
+    with open(os.path.join(data_dir, "schemas", "rules.json"), "w") as f:
+        f.write(rule_json_schema)
+
+def create_models():
+    class Config:
+        arbitrary_types_allowed = True
+
+    # ModelWithPath = create_model(
+    #     "ModelWithPath", path=(request.param, ...), __config__=Config
+    # )
+    pass
 if __name__ == '__main__':
-    init_meta()
-    init_data()
-    print(DATABASE_NAME, "is_ready")
+    import_rules()
+    import_references()
+    # create_json_rules_model()

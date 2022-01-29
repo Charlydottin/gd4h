@@ -1,4 +1,4 @@
-label_fr,label_en
-Environnement,Environment
-Santé,Health
-Référentiel,Standards
+name_en,name_fr,uri,slug
+Environment,Environnement,,
+Health,Santé,,
+Standards,Référentiel,,

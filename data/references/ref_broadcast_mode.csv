@@ -1,4 +1,4 @@
-label_fr,label_en,uri
-API,API,
-Process,Process,
-Portail,Portal,
+uri,name_en,name_fr
+,API,API
+,Process,Process
+,Portal,Portail

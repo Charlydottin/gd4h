@@ -1,9 +1,9 @@
-label_fr,label_en
-Coordonnées x/y,x/y coordinates
-RGF93,RFG93
-Lambert 93,Lambert 93
-Lambert 2 étendu,Extended Lambert 2
-GPS,GPS
-UTM,UTM
-WGS84,WGS84
-Non spécifié, Not specified
+name_fr,name_en,uri,slug
+Coordonnées x/y,x/y coordinates,,
+RGF93,RFG93,,
+Lambert 93,Lambert 93,,
+Lambert 2 étendu,Extended Lambert 2,,
+GPS,GPS,,
+UTM,UTM,,
+WGS84,WGS84,,
+Non spécifié,Not specified,,

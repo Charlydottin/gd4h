@@ -1,23 +1,23 @@
-label_fr,label_en
-ondes radioélectriques,radio waves
-polluants de l'alimentation,alimentation pollution
-bruit,noise
-indicateurs socio-démographiques,sociodemographical indicators
-polluants de l’air,air pollution
-polluants de l'eau de boisson,drinking water pollution
-métaux,metals
-polluants de l'air intérieur,indoor air pollution
-facteurs météorologiques,meteorological factors
-déchets,waste
-pesticides,pesticides
-biocides,biocides
-polluants de l'eau,water pollution
-polluants des sols,soils pollution
-ndvi,nvdi
-amiante,asbestos
-radioactivité,radioactivity
-air,air
-exposition professionnelles,professional exposure
-produits et substances phytopharmaceutiques,plant protection products and substances
-radiation,radiation
-composés organiques,organic compounds
+name_en,name_fr,uri,slug
+radio waves,ondes radioélectriques,,
+alimentation pollution,polluants de l'alimentation,,
+noise,bruit,,
+sociodemographical indicators,indicateurs socio-démographiques,,
+air pollution,polluants de l’air,,
+drinking water pollution,polluants de l'eau de boisson,,
+metals,métaux,,
+indoor air pollution,polluants de l'air intérieur,,
+meteorological factors,facteurs météorologiques,,
+waste,déchets,,
+pesticides,pesticides,,
+biocides,biocides,,
+water pollution,polluants de l'eau,,
+soils pollution,polluants des sols,,
+nvdi,ndvi,,
+asbestos,amiante,,
+radioactivity,radioactivité,,
+air,air,,
+professional exposure,exposition professionnelles,,
+plant protection products and substances,produits et substances phytopharmaceutiques,,
+radiation,radiation,,
+organic compounds,composés organiques,,
