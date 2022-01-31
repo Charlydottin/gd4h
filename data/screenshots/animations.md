@@ -1,6 +1,11 @@
+# SYNOPSIS
+
+
 ## Point d'entrée: liste des jeux de données /datasets
 J'accède à la page jeux de données à l'adresse /datasets/:
-![./dataset_list.jpg](./dataset_list.jpg)
+
+![](./datasets_list.png)
+
 
 ### Commenter
 
@@ -16,11 +21,17 @@ POST /comments {"data": {"username": "", "text": "", "scope": "general"}}
 un message d'information apparait à la place du formulaire "Votre commentaire a bien été enregistré!"
 La modale se ferme après quelques secondes 
 
+![](./button_reaction.png)
+
+
+![](./commentaire.png)
+
+
+
+![./dataset_list.pdf](list_mockup.png)
 
 ### Recherche
 Je tape "métaux lourds" dans la barre de recherche:
-
-![./dataset_list.jpg](./dataset_list.jpg)
 
 et j'appuye sur entrée ou je clique sur le bouton "rechercher"
 
@@ -29,7 +40,7 @@ la langue sectionnée par défault est le français 'fr'
 
 ### Resultats de la recherche
 
-![](./search_results.jpg)
+![](./search_result.png)
 
 Le nombre de résultats s'affiche: X Jeux de données disponibles  
 La recherche initiale est mentionnée: pour "contenu de la recherche initiale" 
@@ -60,10 +71,14 @@ avec les même informations que la page qui liste tous les jeux de données:
   - score  
 - un bouton "reset" apparaît pour effacer la recherche
 
-### Recherche
 
-[](./filter_ex.jpg)
+### Recherche par filtre
+
+[](./filter_nav.png)
+
 Je selectionne un ou plusieurs filtres dans le menu de filtres. 
+
+[](./filter_ex.png)
 
 - A la sélection d'un filtre, les valeurs des filtres selectionnés + le texte de la recherche dans la barre de recherche 
 la liste des résultats s'affiche
@@ -71,7 +86,8 @@ la liste des résultats s'affiche
 - Il est aussi possible d'appuyer sur Entrée ou de clicker sur le bouton rechercher pour accéder à la liste des résultats
 
 ### Resultats de la recherche
-[](./filter_results.jpg)
+
+[](./filter_results.png)
 - Le nombre de résultats s'affiche: X Jeux de données disponibles  
 - la recherche initiale est mentionnée: pour "requete" 
 - les filtres selectionnés sont rappelés
@@ -102,9 +118,11 @@ la liste des résultats s'affiche
 ## Point d'entrée: fiche de détail du jeu de données
 
 J'accède à la page détaillée du jeux de données à l'adresse /datasets/<id>:
-[](./dataset_item.jpg)
+![](./dataset_item.jpg)
 
 ### Commenter le jeu de données
+
+![./dataset_item.pdf](item_mockup.png)
 
 Un bouton "commenter" est disponible. 
 En cliquant sur le bouton une modale apparait avec un formulaire 
@@ -120,6 +138,8 @@ La modale se ferme après quelques secondes
 
 ### Commenter une section du jeu de données
 
+![./dataset_item.pdf](item_mockup.png)
+
 Un bouton "commenter" est disponible au niveau de chaque section. 
 En cliquant sur le bouton une modale apparait avec un formulaire 
 input text le nom de l'utilisateur
@@ -133,6 +153,8 @@ un message d'information apparait à la place du formulaire "Votre commentaire a
 La modale se ferme après quelques secondes.
 
 ### Commenter un champ descriptif du jeu de données
+
+![./dataset_item.pdf](item_mockup.png)
 
 Un bouton "commenter" est disponible au niveau des valeurs qui acceptent les commentaires. 
 En cliquant sur le bouton une modale apparait avec un formulaire 
@@ -148,6 +170,9 @@ La modale se ferme après quelques secondes.
 
 
 ### ~Ajouter un tag~ [HORS SPECS]
+
+
+![./dataset_item.pdf](item_mockup.png)
 
 Un bouton "+" est disponible au niveau du champs "exposure_factor/facteur". 
 En cliquant sur le bouton une modale apparait avec un formulaire 
