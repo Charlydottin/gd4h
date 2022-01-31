@@ -37,7 +37,7 @@
                         {%endfor%}
                       </div>
                     </fieldset>
-                  </div>
+                    </div>
                   {% elif _filter["is_bool"] %}  
                     <div class="fr-form-group">
                       <fieldset class="fr-fieldset fr-fieldset--inline">

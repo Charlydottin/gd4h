@@ -47,8 +47,8 @@
         console.log("click");
     });
     $("button#reset").click(function(){
-        $("#filter_nav").val() = '';
-        $("#filter_nav").append(filter_nav);
+        //$("#filter_nav").val() = '';
+        //$("#filter_nav").append(filter_nav);
         $("#search_results").val() = '';
         $("#datasets_list").append(element);
     });
@@ -69,7 +69,7 @@
             return response.json();
         })
         .then(function(myJson) {    
-            
+            console.log(myJson);  
             $("#search_results").append(myJson.data);
         })
         }

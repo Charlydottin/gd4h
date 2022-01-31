@@ -75,6 +75,7 @@ def results():
     query = urllib.parse.quote_plus(q)
     results= requests.get(f"{API_ROOT_URL}/search/datasets/fr?q={query}")
     references = results.json()
+    print(references["results"][0])
     _filters, values = build_filter_menu()
     return jsonify({'data': render_template('search_results.tpl', lang="fr", page_title="Jeux de données", count=references["count"],results=references["results"], query=q, filters=_filters, values=values)})
     
@@ -113,6 +114,7 @@ def dataset_list():
 def dataset_item(dataset_id):
     req_datasets = requests.get(f"{API_ROOT_URL}/datasets/{dataset_id}")
     dataset = req_datasets.json()
+    print(dataset)
     rules = requests.get(API_ROOT_URL+"/references/meta/dataset")
     ordered = sorted([(rule["section"],rule["slug"], int(rule["order"])) for rule in rules.json()], key=itemgetter(2))
     dataset_section = {}
