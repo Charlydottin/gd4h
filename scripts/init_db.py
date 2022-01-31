@@ -25,7 +25,7 @@ curr_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(curr_dir)
 data_dir = os.path.join(parent_dir, "data")
 meta_dir = os.path.join(data_dir, "meta")
-
+schema_dir = os.path.join(data_dir, "schemas")
 dataset_dir = os.path.join(data_dir, "dataset")
 organization_dir = os.path.join(data_dir, "organization")
 
@@ -50,7 +50,7 @@ def init_data():
     import_organizations()
     DB.datasets.drop()
     import_dataset()
-    link_organizations()
+    link_dataset2organizations()
     register_comments()
 
 def init_meta():
@@ -58,12 +58,10 @@ def init_meta():
     import_rules()
     DB.references.drop()
     import_references()
-    DB.logs.drop()
-    DB.users.drop()
-    create_default_users()
-    # translate_fr_references()
-    # translate_en_references()
-
+    # DB.logs.drop()
+    # DB.users.drop()
+    # create_default_users()
+    
 
 def translate(text, _from="fr"):
     if _from == "fr":
@@ -87,7 +85,10 @@ def import_rules():
                 break
             else:
                 for k,v in row.items():
-                    if k == "external_model_display_keys":
+                    # if row["multiple"] == "True":
+                    if "|" in v:
+                        row[k] == v.split("|")
+                    elif k == "external_model_display_keys":
                         row[k] == v.split("|")
                     elif v == "True":
                         row[k] = True
@@ -160,8 +161,6 @@ def import_references():
                 DB.references.insert_one(reference)
             except pymongo.errors.DuplicateKeyError:
                 pass
-            
-
     print("Created references table")
     
 
@@ -248,6 +247,10 @@ def get_translated_fields(model="organization"):
     fields = DB.rules.find({"model": model, "translation": True}, {"slug":1})
     return [f["slug"] for f in fields]
 
+def get_mandatory_fields(model="organization"):
+    fields = DB.rules.find({"model": model, "mandatory": True}, {"slug":1})
+    return [f["slug"] for f in fields]
+
 def get_rule(model, field_slug):
     '''get rule for given model and given field'''
     rule = DB.rules.find_one({"model": model, "slug": field_slug})
@@ -258,38 +261,10 @@ def get_rules(model):
     rules = DB.rules.find({"model": model},{"_id":0})
     return list(rules)
 
-def import_organizations():
-    '''import_organizations
-    insert organization defined by rules into DB.organizations from data/organizations/organizations_fr.csv
-    '''
-    DB.organizations.drop()
-    org_doc = os.path.abspath(os.path.join(data_dir, "organizations", "organizations_fr.csv"))
-    print(f"Create Organizations by inserting {org_doc}")
-    with open(org_doc, "r") as f:
-        reader = DictReader(f, delimiter=",")
-        for row in reader:
-            org = {"fr": {},"en": {}}
-            org["fr"] = row
-            org["en"] = {k: v for k,v in row.items() if get_not_translated_fields("organization")} 
-            for translated_field in  get_translated_fields("organization"):
-                rule = get_rule("organization", translated_field)
-                try:
-                    value = row[translated_field] 
-                    if rule["is_controled"]:
-                        accepted_ref = DB[rule["reference_table"]].find_one({"label_fr": value}, {"label_en":1})
-                        try:
-                            value = accepted_ref["label_en"]
-                        except: 
-                            value = accepted_ref
-                except KeyError:
-                    value = None
-                org["en"][translated_field] = value
-            db_org = DB.organizations.insert_one(org)
-            create_logs("admin","create", "organization", True, "OK", scope=None, ref_id=db_org.inserted_id)
-    print(DB.organizations.count_documents({}), "organization inserted")
-
-
-
+def get_references(field, lang="fr"):
+    '''get reference from given field name and lang'''
+    return DB["ref_"+field].distinct(f"name_{lang}")
+    
 
 def get_reference_list(model, field_slug,lang="fr"):
     rule = get_rule(model, field_slug)
@@ -301,425 +276,100 @@ def get_reference_list(model, field_slug,lang="fr"):
     references = DB[rule["reference_table"]].distinct(display_key)
     return references
 
-def import_datasets():
-    print("Create Datasets")
-    created_datasets = []
-    datasets_doc = os.path.abspath(os.path.join(data_dir, "datasets", "census_datasets_fr.csv"))
-    with open(datasets_doc, "r") as f:
-        reader = DictReader(f, delimiter=",")
-        for row in reader:
-            dataset = {}
-            #COMMON
-            dataset["name"] = row["dataset_name"]
-            dataset["acronym"] = row["acronym"]
-            dataset["description"] = {"label_fr":row["description"], "label_en": None}
-            dataset["organizations"] = [{"name":n.strip()} for n in row["organization"].split("|")]
-            dataset["url"] = row["link"]
-            #CONTACT
-            dataset["contact"] = [row["contact"]]
-            dataset["contact_type"] = [{"label_fr": "email", "label_en": "email"}]
-            dataset["contact_comments"] = [create_comment("admin", text=row["contact"])]
-            # SANTE-ENVIRONNEMENT
-            dataset["data_domain"] = {"label_fr": row["data_domain"], "label_en": None}
-            dataset["theme_category"] = {"label_fr":row["theme_category"], "label_en": None}
-            dataset["thematic_field"] = {"label_fr":row["thematic_field"], "label_en": None} 
-            dataset["nature"] = {"label_fr":row["nature"], "label_en": None}
-            dataset["environment"] = [{"label_fr":n.strip(), "label_en": translate(n.strip())} for n in row["environment"].split("/")]
-            dataset["subthematic"] = [{"label_fr":n.strip(), "label_en": translate(n.strip())} for n in row["subthematic"].split("/")]
-            dataset["exposure_factor_category"] = [{"label_fr":n.strip(), "label_en": translate(n.strip())} for n in row["exposure_factor_category"].split("/")]
-            # this a simple copy for NOW
-            dataset["exposure_factor"] = dataset["exposure_factor_category"]
-            # TECH
-            dataset["has_filter"] = bool(row["filter"])
-            dataset["has_search_engine"] = bool(row["search_engine"])
-            dataset["has_missing_data"] = bool(row['missing_data']!= "" and row['missing_data'] is not None and row["missing_data"] != "None")
-            if dataset["has_missing_data"]: 
-                dataset["missing_data_comments"] = [create_comment("admin", text=row["missing_data"])]
-            dataset["has_documentation"] = bool(row['documentation']!= "" and row['documentation'] is not None and row["documentation"] != "None")
-            if dataset["has_documentation"]: 
-                dataset["documentation_comments"] = [create_comment("admin", text=row["documentation"])]
-            
-            dataset["is_downloadable"] = bool(row["downloadable"])
-            dataset["broadcast_mode"] = [ {"label_fr":n.strip(), "label_en":None} for n in row["broadcast_mode"].split("/") ]
-            dataset["files_format"] = [n.strip().title() for n in row["format"].split("/")]
-            dataset["tech_comments"] = []
-            # dataset["tech_comments"] = [create_comment("c24b", text="Commentaire sur l'accès technique")]
-            #LEGAL
-            dataset["license_name"] = {"label_fr":row["license_name"], "label_en": None}
-            dataset["license_type"] = [{"label_fr":n, "label_en": n} for n in row["license_type"].split("/")]
-            dataset["has_pricing"] = bool(row['pricing']!= "Gratuit")
-            if row['pricing']!= "Gratuit":
-
-                dataset["legal_comments"] = [
-                    create_comment("c24b", text=row["pricing"])]
-            else:
-                dataset["legal_comments"] = []
-            dataset["has_restriction"] = bool(row['restrictions']!= "")
-            if dataset["has_restriction"]: 
-                dataset["restrictions_comments"] = [create_comment("admin", text=row["restrictions"])]
-            dataset["has_compliance"] = bool(row['compliance']!= "")
-            if dataset["has_compliance"]: 
-                dataset["compliance_comments"] = [create_comment("admin", text=row["compliance"])]
-            #GEO
-            dataset["is_geospatial_data"] = bool(row["geospatial_data"])
-            if dataset["is_geospatial_data"]:
-                dataset["administrative_territory_coverage"] = [n.strip() for n in row["administrative_territory_coverage"].split(",")]
-                dataset["geospatial_geographical_coverage"] = row["geographical_geospatial_coverage"].split("+")
-                dataset["geographical_information_level"] = [{"label_fr":v.strip(), "label_en":translate(v.strip())} for v in row["geographical_information_level"].split("/")]
-                dataset["projection_system"] = [n.strip() for n in row["projection_system"].split("/")]
-                dataset["related_geographical_information"] = bool(row["related_geographical_information"] == "")
-            if row["related_geographical_information"] != "":
-                dataset["geo_comments"] = [create_comment("c24b", text=row["related_geographical_information"])]
-            else:
-                dataset["geo_comments"] = []
-            #TIME
-            dataset["year"] = [n.strip() for n in row["year"].split("-")]
-            dataset["temporal_scale"] = [v.strip() for v in row["temporal_scale"].split("/")]
-            dataset["update_frequency"] = {"label_fr":row["update_frequency"], "label_en": translate(row["update_frequency"])}
-            if row["automatic_update"] == "false":
-                dataset["automatic_update"] = False
-            if row["automatic_update"] == "true":
-                dataset["automatic_update"] = False
-            if row["automatic_update"] == "":
-                dataset["automatic_update"] = None
-            # ADMIN
-            dataset["last_updated"] = row["last_updated"]
-            dataset["last_inserted"]= row["last_inserted"]
-            dataset["last_modification"] = row["last_modification"]
-            dataset["related_referentials"] = [v.strip() for v in row["related_referentials"].split("|")]
-            dataset["other_access_points"] = [v.strip() for v in row["other_access_points"].split("|")]
-            # dataset["context_comments"] = [create_comment("admin", text="Commentaire sur le contexte de production du dataset")]
-            dataset["context_comments"] = []
-            dataset["comments"] = [create_comment("admin", text=row["comment"])]
-            ds = DB.datasets.insert_one(dataset)
-            created_datasets.append(ds.inserted_id)
-    for id in created_datasets:
-        DB.logs.insert_one(create_logs("admin", "create", "dataset", True, "OK", scope=None, ref_id=id))
            
-def link_organizations_to_datasets():
-    not_found_orgs = []
-    for dataset in DB.datasets.find({}, {"_id": 1, "organizations":1}):
-        orgs = []
-        for org in dataset["organizations"]:
-            existing_org = DB.organizations.find_one({"name": org["name"]})
-            
-            if existing_org is None:
-                not_found_orgs.append(org["name"])
-                DB.logs.insert_one(create_logs("admin", "edit", "dataset", False, "Organization '{}' not found".format(org["name"]), scope="organizations", ref_id=dataset["_id"]))
-            else:
-                orgs.append(existing_org)
-        log = create_logs("admin", "edit", "dataset", True, "OK", scope="organizations", ref_id=dataset["_id"])
-        DB.datasets.update_one({"_id": dataset["_id"]},{"$set": {"organizations":orgs}})
-        DB.logs.insert_one(log)
-    print("Missing orgs ", set(not_found_orgs))
-    
-def register_dataset_comments():
-    dataset = DB.datasets.find_one()
-    comments_fields =  {key:1 for key in dataset if "comment" in key}
-    comments_fields["_id"] = 1
-    for dataset in DB.datasets.find({}, comments_fields):
-        dataset_id = dataset["_id"]
-        del dataset["_id"]
-        for k,v in dataset.items():
-            for c in v:
-                register_comment(c, "dataset", k, dataset_id)
 
-def translate_datasets():
-    for dataset in DB.datasets.find({}):
-        for k,v in dataset.items():
-            if isinstance(v, dict):
-                if v["label_en"] is None and v["label_fr"] is not None:
-                    status, ref = find_reference_by_label_fr("ref_"+k, v["label_fr"])
-                    if status:
-                        v["label_en"] = ref["label_en"]
-                    else:
-                        v["label_en"] = translate(v["label_fr"])
-                    DB.datasets.update_one({"_id": dataset["_id"]}, {"$set": {k:v}})
-                    
-                    continue
-                elif v["label_fr"] is None and v["label_en"] is not None:
-                    status, ref = find_reference_by_label_fr("ref_"+k, v["label_en"])
-                    if status:
-                        v["label_fr"] = ref["label_fr"]
-                    else:
-                        v["label_fr"] = translate(l["label_en"])
-                    DB.datasets.update_one({"_id": dataset["_id"]}, {"$set": {k:v}})            
-                    continue
-                
-            if isinstance(v, list):
-                update = False
-                if k not in ["organizations"]:
-                    for l in v:    
-                        if isinstance(l, dict):    
-                            if l["label_en"] is None and l["label_fr"] is not None:
-                                status, ref = find_reference_by_label_fr("ref_"+k, l["label_fr"])
-                                if status:
-                                    l["label_en"] = ref["label_en"]
-                                else:
-                                    l["label_en"] = translate(l["label_fr"])
-                                update = True
-                            elif l["label_fr"] is None and l["label_en"] is not None:
-                                status, ref = find_reference_by_label_fr("ref_"+k, v["label_en"])
-                                if status:
-                                    l["label_fr"] = ref["label_fr"]
-                                else:
-                                    l["label_fr"] = translate(l["label_en"])
-                                update = True
-                if update:
-                    DB.datasets.update_one({"_id": dataset["_id"]}, {"$set": {k:v}})            
-                    continue
-def translate_fr_references():
-    print("Translate references from FR > EN")
-    for tablename in DB.references.distinct("tablename"):
-        for ref_value in DB[tablename].find({"$or":[{"label_en": ""},{"label_en": None}], "label_fr":{"$nin": ["", None]}}, {"_id":1, "label_fr":1}):
-            try: 
-                value_en = translate(ref_value["label_fr"], _from="fr")
-                DB[tablename].update_one({"_id": ref_value["_id"]}, {"$set": {"label_en": value_en} })
-            except KeyError:
-                pass
-def translate_en_references():
-    print("Translate references from EN > FR")
-    for tablename in DB.references.distinct("tablename"):
-        for ref_value in DB[tablename].find({"$or":[{"label_fr": ""},{"label_fr": None}], "label_en":{"$nin": ["", None]}}, {"_id":1, "label_en":1}):
-            try: 
-                
-                value_fr = translate(ref_value["label_en"], _from="en")
-                DB[tablename].update_one({"_id": ref_value["_id"]}, {"$set": {"label_fr": value_fr} })
-            except KeyError:
-                pass
-
-def translate_missing_references():
-    for tablename in DB.references.distinct("tablename"):
-        for ref_value in DB[tablename].find({"$or":[{"label_en": ""},{"label_en": None}], "label_fr":{"$nin": ["", None]}}, {"_id":1, "label_fr":1}):
-            try: 
-                value_en = translate(ref_value["label_fr"], _from="fr")
-                DB[tablename].update_one({"_id": ref_value["_id"]}, {"$set": {"label_en": value_en} })
-            except KeyError:
-                pass
-    for tablename in DB.references.distinct("tablename"):
-        for ref_value in DB[tablename].find({"$or":[{"label_fr": ""},{"label_fr": None}], "label_en":{"$nin": ["", None]}}, {"_id":1, "label_en":1}):
-            try: 
-                
-                value_fr = translate(ref_value["label_en"], _from="en")
-                DB[tablename].update_one({"_id": ref_value["_id"]}, {"$set": {"label_fr": value_fr} })
-            except KeyError:
-                pass
-
-def get_json_type(datatype):
-    if datatype == "dict":
-        return "object"
-    elif datatype == "bool":
-        return "boolean"
-    elif datatype == "id":
-        return "string" 
-    elif datatype == "int":
-        return "number"
-    elif datatype == "date":
-        return "date"
+def get_json_type_format(rule):
+    print(rule["field"], rule["reference_table"], rule["external_model"])
+    if rule["datatype"] == "date":
+        datatype = { "type": "string", "format": "date-time" }
+    elif rule["datatype"] == "id":
+        datatype =  { "type": "string"}
+    elif rule["datatype"] == "url":
+        datatype = { "type": "string", "format": "uri", "pattern": "^https?://" }
+    elif rule["datatype"] == "dict":
+        datatype = {"type": "object"}
     else:
-        return "string"
-def get_contraint(rule, lang="fr"):
+        datatype = {"type": rule["datatype"]}
     if rule["constraint"] == "oneOf":
-        values = rule["reference_table"].distinct(rule["external_model_display_keys"][0]+"_"+lang)
-        return {"enum": values}
+        print(rule["field"], rule["reference_table"], rule["external_model"])
+        # if rule["slug"].endswith("_fr"):    
+        #     values = get_references(rule["external_model"], lang="fr")
+        # else:
+        #     values = get_references(rule["slug"], lang="fr")
+        datatype["enum"] = []
+        # datatype["enum"] = values
     elif rule["constraint"] == "unique":
-        return {"unique": True}
+        datatype["unique"] = True
+    elif rule["constraint"] == "if_exist":
+        datatype["type"] =  [datatype["type"], "null"]
+    return datatype
 
-def gen_json_item(rule, lang="fr"):
-    
-    field_json = {
-                    "name": rule["slug"],
-                    "title": rule["label_"+lang],
-                    "description": rule["description_"+lang], 
-                }
-    str_datatype, example = return_type_example(rule["datatype"])
-    if rule["multiple"]:
-        field_json["type"] = "array"
-        field_json["items"] = {"type": str_datatype}
-        field_json["example"] = [example]
-    else: 
-        field_json["type"] = str_datatype
-        field_json["example"] = example    
-    if rule["mandatory"]:
-        field_json["constraints"] = {"required": True}
-    
-    if rule["reference_table"] != "":
-        enum_values = DB[rule["reference_table"]].distinct("label_"+lang)
-        if "constraints" in field_json:
-            field_json["constraints"]["enum"] = enum_values
-        else:
-            field_json["constraints"] = {
-                "enum": enum_values            
-            }
-    if rule["constraint"] == "unique":
-        if "constraints" in field_json:
-            field_json["constraints"]["unique"] = True
-        else:
-            field_json["constraints"] = {
-                "unique": True            
-            }
-    
-    # if rule["external_model"] != "":
-    #     field_json["type"] = [
-    #                     "object",{"$ref":"https://github.com/c24b/gd4h/catalogue/raw/v0.0.1/{}-schema.json".format(rule["external_model"])}
-    #     ]
-    return field_json
-def create_json_m_simple():
-    
-    {
-        "title": "{dataset_model}",
-        "type": "object",
-        "properties": {
-        }
-    }
-    property_item = { "title": "{Model}",
-            "default": "dataset",
-            "type": "string"}
-def create_json_model():
-    '''generate JSON empty file from rules table'''
-    rules = [rule for rule in DB["rules"].find({},{})]
 
-    final_models = {}
-    for  model_name, field_rules in itertools.groupby(rules, key=lambda x:x["model"]):
-        print(model_name)
-        field_rules = list(field_rules)
-        is_multilang_model = any([r["translation"] for r in field_rules])
-        if is_multilang_model:
-            for lang in AVAILABLE_LANG:
-                root_schema = {
-                "$schema": "https://frictionlessdata.io/schemas/table-schema.json",
-                "name": f"{model_name}_{lang}",
-                "title": "{} - {}".format(model_name.title(), lang),
-                "description": f"Spécification du modèle de données {model_name} relatif au catalogue des jeux de données Santé Environnement du GD4H",
-                "contributors": [
-                    {
-                    "title": "GD4H",
-                    "role": "author"
-                    },
-                    {
-                    "title": "Constance de Quatrebarbes",
-                    "role": "contributor"
-                    }
-                ],
-                "version": "0.0.1",
-                "created": "2022-01-28",
-                "lastModified": "2022-01-28",
-                "homepage": "https://github.com/c24b/gd4h/",
-                "$id": f"{model_name}_{lang}-schema.json",
-                "path": f"https://github.com/c24b/gd4h/catalogue/raw/v0.0.1/{model_name}_{lang}-schema.json",
-                "type":object,
-                "properties":[
 
-                ]
-                }
-                for rule in field_rules:
-                    root_schema["properties"].append(gen_json_item(rule, lang))
-                yield root_schema
-                root_schema["properties"] = []
-        else:
-            root_schema = {
-                "$schema": "https://frictionlessdata.io/schemas/table-schema.json",
-                "name": f"{model_name}",
-                "title": f"{model_name.title()} Simplifié",
-                "description": f"Spécification du modèle de données {model_name.title()} relatif au catalogue des jeux de données Santé Environnement du GD4H",
-                "contributors": [
-                    {
-                    "title": "GD4H",
-                    "role": "author"
-                    },
-                    {
-                    "title": "Constance de Quatrebarbes",
-                    "role": "contributor"
-                    }
-                ],
-                "$id": f"{model_name}-schema.json",
-                "version": "0.0.1",
-                "created": "2022-01-28",
-                "lastModified": "2022-01-28",
-                "homepage": "https://github.com/c24b/gd4h/",
-                "path": f"https://github.com/c24b/gd4h/catalogue/raw/v0.0.1/{model_name}-schema.json".format(model_name),
-                "properties":[
-
-                ]
-            }
-            for rule in field_rules:
-                root_schema["properties"].append(gen_json_item(rule, "en"))
-            yield root_schema
-    
-def write_json_model():
-    for json_schema in create_json_model():
-        with open(os.path.join(data_dir, "schemas", json_schema["$id"]), "w") as f:
-            f.write(json.dumps(json_schema, indent=4))
-            print(json_schema["$id"], "ready!")
-
-def create_json_rules_model():
+def create_rules_json_schema():
     rule_model = create_model("Rules", **DB.rules.find_one({},{"_id":0}))
     rule_json_schema = rule_model.schema_json()
     with open(os.path.join(data_dir, "schemas", "rules.json"), "w") as f:
         f.write(rule_json_schema)
 
-def is_one_of(cls, key, v):
-    assert v in  get_references()
-    assert v.isalnum(), 'must be alphanumeric'
-    return v
+def create_reference_json_schema():
+    rule_model = create_model("Reference", **DB.rules.find_one({},{"_id":0}))
+    rule_json_schema = rule_model.schema_json()
+    with open(os.path.join(data_dir, "schemas", "rules.json"), "w") as f:
+        f.write(rule_json_schema)
 
-def convert2json_schema_type(datatype):
-    if datatype == "date":
-        return { "type": "string", "format": "date" }
-    elif datatype == "id":
-        return { "type": "string"}
-    elif datatype == "url":
-        return { "format": "uri", "pattern": "^https?://" }
-    else:
-        return {"type": datatype}
 
-def generate_jsonchema(model_name):
-    '''create json-schema to feed models.py'''
-    model_rules = get_rules(model_name)
-    is_multilang_model = any([r["translation"] for r in model_rules])    
-    if is_multilang_model:
-        for lang in AVAILABLE_LANG:
-            model_name_title = model_name.title()+ lang.upper()
-
-    else:
-        model_name_title = model_name.title()
-        lang = "en"
-def create_model2jsonschema(model_name, model_name_title, model_rules, lang):
+def create_json_schema(model_name, model_name_title, model_rules, lang):
     doc_root = { 
         "title": model_name_title,
         "type": "object",
+        "$id": f"http://gd4h.fr/schemas/{model_name}.json",
         "properties": {}
     }
     doc_root["required"] =  []
     doc_root["properties"] = {}
     doc_root["definitions"] = {name.title(): {} for name in DB.rules.distinct("modele") if name != model_name}
+    doc_root["required"] = get_mandatory_fields(model_name)
     for field in model_rules:
         doc_root["properties"][field["slug"]] = {
             "title": field[f"name_{lang}"].title(), 
             "description": field[f"description_{lang}"]    
             }   
-        if field["mandatory"]:
-            doc_root["required"].append(field["slug"])
         if field["external_model"] != "":
+            ref_model = field['external_model']
             if field["reference_table"] != "":
-                doc_root["definitions"][f"Reference{field['slug'].title()}"] = {"properties": {
-                    g["slug"]:convert2json_schema_type(g["datatype"]) for g in get_rules(field['external_model'].lower())
-            }, "required": [g["slug"] for g in get_rules(field['external_model'].lower()) if g["mandatory"]]}
+                def_name = f"#/definitions/Reference{ref_model.title()}"
             else:
-                doc_root["definitions"][f"{field['external_model'].title()}"]= {"properties": {
-                    g["slug"]:convert2json_schema_type(g["datatype"]) for g in get_rules(field['external_model'].lower())
-            }, "required": [g["slug"] for g in get_rules(field['external_model'].lower()) if g["mandatory"]]}
+                def_name = f"#/definitions/{ref_model.title()}"
+            reference_rules = get_rules(ref_model)
+            reference_model = {r["slug"]: get_json_type_format(r) for r in reference_rules}
+            required = get_mandatory_fields(ref_model)
+            print(reference_model)
+            doc_root["definitions"][def_name] = {
+                "properties": reference_model, 
+                "required": required
+            }
+        
         if field["multiple"]:
-            doc_root["properties"][field["slug"]]["type"] = "array"
-            if field["reference_table"] != "":
-                doc_root["properties"][field["slug"]]["items"] = {"$ref": f"#/definitions/Reference{field['slug'].title()}"}
-            else:
-                doc_root["properties"][field["slug"]]["items"] = {"$ref": f"#/definitions/{field['external_model'].title()}"}
+            doc_root["properties"][field["slug"]] = {"type": "array"}
+            if field["external_model"] != "":
+                ref_model = field['external_model']
+                if field["reference_table"] != "":
+                    def_name = f"#/definitions/Reference{ref_model.title()}"
+                else:
+                    def_name = f"#/definitions/{ref_model.title()}"
+                    
+            doc_root["properties"][field["slug"]]["items"] = {
+                "$ref": def_name, 
+                }
             
         else:
             if field["external_model"] != "":
                 if field["reference_table"] != "":
-                    doc_root["properties"][field["slug"]]["items"] = {"$ref": f"#/definitions/Reference{field['slug'].title()}"}
+                    doc_root["properties"][field["slug"]]["items"] = {
+                        "$ref": f"#/definitions/Reference{field['slug'].title()}"
+                        
+                        }
                 else:
                     doc_root["properties"][field["slug"]]["items"] = {"$ref": f"#/definitions/{field['external_model'].title()}"}
             else:
@@ -735,28 +385,31 @@ def create_model2jsonschema(model_name, model_name_title, model_rules, lang):
     # class Config:
     #     arbitrary_types_allowed = True
     
-    with open(f"{model_name_title}.json", "w") as f:
+    with open(os.path.join([schema_dir, f"{model_name_title}.json"]), "w") as f:
         data = json.dumps(doc_root, indent=4)
         f.write(data)
-    return f"{model_name_title}.json"
+    return os.path.join([schema_dir, f"{model_name_title}.json"])
     
-def create_models():
+def create_json_schemas():
     rules = list(DB.rules.find({},{"_id":0}))
     for model_name, field_rules in itertools.groupby(rules, key=lambda x:x["model"]):
         model_rules = list(field_rules)
-        is_multilang_model = any([r["translation"] for r in model_rules])
-        if is_multilang_model:
-            for lang in AVAILABLE_LANG:
-                model_name_title = model_name.title()+ lang.upper()
-                create_model2jsonschema(model_name, model_name_title, model_rules, lang)
+    #     is_multilang_model = any([r["translation"] for r in model_rules])
+    #     if is_multilang_model:
+    #         for lang in AVAILABLE_LANG:
+    #             model_name_title = model_name.title()+ lang.upper()
+    #             create_model2jsonschema(model_name, model_name_title, model_rules, lang)
 
-    else:
+    # else:
         model_name_title = model_name.title()
-        create_model2jsonschema(model_name, model_name_title, model_rules, lang="en")
+        yield create_json_schema(model_name, model_name_title, model_rules, lang="fr")
+
+def generate_models():
+    with os.listdir(schema_dir):
+
+#     datamodel-codegen --input Organization.json --input-file-type jsonschema --field-constraints --use-generic-container-types    
 
 if __name__ == '__main__':
     import_rules()
     import_references()
-    # create_model("organization", lang="fr")
-    create_models()
-    # create_json_rules_model()
+    create_json_schemas()

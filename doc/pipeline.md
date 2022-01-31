@@ -18,8 +18,9 @@ json schema example see Pydantic Doc Code Generation:
 
 
   - [x] add example value in rules.csv => init_db
-  - [ ] add validator using rules
-  - [ ] declare external ref as ref
+  - [ ] add validator using rules => enum not working
+  - [x] declare external ref as ref
+
 ```
 validators = {
     'username_validator':
