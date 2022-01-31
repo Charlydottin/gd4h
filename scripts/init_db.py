@@ -344,7 +344,6 @@ def create_json_schema(model_name, model_name_title, model_rules, lang):
             reference_rules = get_rules(ref_model)
             reference_model = {r["slug"]: get_json_type_format(r) for r in reference_rules}
             required = get_mandatory_fields(ref_model)
-            print(reference_model)
             doc_root["definitions"][def_name] = {
                 "properties": reference_model, 
                 "required": required
