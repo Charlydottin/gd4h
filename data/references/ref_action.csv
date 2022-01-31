@@ -1,7 +1,7 @@
-"label_en","label_fr","uri"
-"create","créer",
-"delete","supprimer",
-"edit","éditer",
-"comment","commenter",
-"suggest","suggérer",
-"add","ajouter"
+name_en,name_fr,uri,slug
+create,créer,,
+delete,supprimer,,
+edit,éditer,,
+comment,commenter,,
+suggest,suggérer,,
+add,ajouter,,

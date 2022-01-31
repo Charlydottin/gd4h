@@ -1,5 +1,5 @@
-label_fr,label_en
-Air,Air
-Eau,Water
-Sols,Soils
-Alimentation,Food
+name_en,name_fr,slug,uri
+Air,Air,,
+Water,Eau,,
+Soils,Sols,,
+Food,Alimentation,,

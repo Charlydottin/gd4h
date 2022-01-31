@@ -1,7 +1,7 @@
-label_fr,label_en
-Agents Physiques,Physical Agents
-Air,Air
-Eaux,Water
-Bruit,Noise
-Pesticides,Pesticides
-Sols,Soils
+name_fr,name_en,uri,slug
+Agents Physiques,Physical Agents,,
+Air,Air,,
+Eaux,Water,,
+Bruit,Noise,,
+Pesticides,Pesticides,,
+Sols,Soils,,

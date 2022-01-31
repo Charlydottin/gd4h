@@ -1,7 +1,7 @@
-label_fr,label_en,uri
-"Agriculture, pêche, sylviculture et alimentation",Agriculture and Fisheries,http://publications.europa.eu/resource/authority/data-theme/AGRI
-Environnement,Environment,http://publications.europa.eu/resource/authority/data-theme/ENVI
-Population et société,Population and Society,http://publications.europa.eu/resource/authority/data-theme/SOCI
-Régions et villes,Regions and Cities,http://publications.europa.eu/resource/authority/data-theme/REGI
-Santé,Health,http://publications.europa.eu/resource/authority/data-theme/HEAL
-Transports,Transport,http://publications.europa.eu/resource/authority/data-theme/TRAN
+name_fr,name_en,uri,slug
+"Agriculture, pêche, sylviculture et alimentation",Agriculture and Fisheries,http://publications.europa.eu/resource/authority/data-theme/AGRI,
+Environnement,Environment,http://publications.europa.eu/resource/authority/data-theme/ENVI,
+Population et société,Population and Society,http://publications.europa.eu/resource/authority/data-theme/SOCI,
+Régions et villes,Regions and Cities,http://publications.europa.eu/resource/authority/data-theme/REGI,
+Santé,Health,http://publications.europa.eu/resource/authority/data-theme/HEAL,
+Transports,Transport,http://publications.europa.eu/resource/authority/data-theme/TRAN,

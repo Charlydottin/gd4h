@@ -1,4 +1,4 @@
-"label_en","label_fr","uri"
-"email","Email",
-"name","Nom",
-"formulaire","Formulaire",
+uri,name_fr,name_en,slug
+,email,Email,
+,name,Nom,
+,formulaire,Formulaire,
