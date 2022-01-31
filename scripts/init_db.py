@@ -6,6 +6,8 @@ import itertools
 import os
 import datetime
 from termios import BSDLY
+from textwrap import indent
+from xml.parsers.expat import model
 import bleach
 from pymongo import MongoClient
 from csv import reader, writer, DictReader, DictWriter
@@ -13,6 +15,7 @@ from copy import copy
 import json
 from argostranslate import package, translate
 from pydantic import create_model 
+from pydantic import BaseModel, ValidationError, validator
 from typing import Optional, List
 from itertools import groupby
 from bson.objectid import ObjectId as BsonObjectId
@@ -70,6 +73,9 @@ def translate(text, _from="fr"):
     
 
 def import_rules():
+    '''
+    import_rules() from data/meta/rules.csv
+    '''
     coll_name = "rules"
     DB[coll_name].drop()
     rules_doc = os.path.join(meta_dir,"rules.csv")
@@ -96,13 +102,16 @@ def import_rules():
             
 
 def import_references():
-    ''' Import references and each ref_table into db tables
-    translate missing field fr or en 
-
+    ''' import_references() 
+    from db.rules table 
+    from data/references/ref_*.csv  
+    - import each ref_table from csv into db tables
+    - register each ref_table into table references
+    - translate missing field with fr or en version
+    - update ref_table csv files back again with db
     '''
     reference = {"model": "reference"}
     for ref_table in DB.rules.distinct("reference_table"):
-        print(ref_table)
         if ref_table != "":
             DB[ref_table].drop()
             print(f"Creating {ref_table} table")
@@ -111,8 +120,7 @@ def import_references():
             ref_file =  os.path.join(data_dir, "references", ref_table+".csv")
             refs = [] 
             try:
-                with open(ref_file, "r") as f:
-                    
+                with open(ref_file, "r") as f:            
                     reader = DictReader(f, delimiter=",")
                     for row in reader:
                         clean_row = {k.strip(): v.strip() for k,v in row.items() if v is not None}
@@ -139,7 +147,6 @@ def import_references():
                     one_record = DB[ref_table].find_one({}, {"_id":0})
                     if one_record is not None:
                         fieldnames = list(one_record.keys())
-                        print(fieldnames)
                         writer = DictWriter(f, delimiter=",",fieldnames=fieldnames)
                         writer.writeheader()
                         for row in DB[ref_table].find({}, {"_id":0}):
@@ -232,20 +239,29 @@ def create_logs(username, action, perimeter, status=True,  message="OK", scope=N
 
              
 def get_not_translated_fields(model="organization"):
+    '''get all fields for given model that are not multilingual'''
     fields = DB.rules.find({"model": model, "translation": False}, {"slug":1})
     return [f["slug"] for f in fields]
+
 def get_translated_fields(model="organization"):
-    fields = DB.rules.find({"model": model, "translation": True}, {"slug":1, "is_controled": 1, "reference_table":1})
-    # for f in fields:
-    #     if f["is_controled"]:
-    #         DB[f["reference_table"]].distinct()
+    '''get all fields for given model that are multilingual'''
+    fields = DB.rules.find({"model": model, "translation": True}, {"slug":1})
     return [f["slug"] for f in fields]
 
 def get_rule(model, field_slug):
+    '''get rule for given model and given field'''
     rule = DB.rules.find_one({"model": model, "slug": field_slug})
     return rule
 
+def get_rules(model):
+    '''get rule for given model and given field'''
+    rules = DB.rules.find({"model": model},{"_id":0})
+    return list(rules)
+
 def import_organizations():
+    '''import_organizations
+    insert organization defined by rules into DB.organizations from data/organizations/organizations_fr.csv
+    '''
     DB.organizations.drop()
     org_doc = os.path.abspath(os.path.join(data_dir, "organizations", "organizations_fr.csv"))
     print(f"Create Organizations by inserting {org_doc}")
@@ -275,23 +291,15 @@ def import_organizations():
 
 
 
-def find_reference_by_label_fr(reference_table, value):
-    external_ref = DB[reference_table].find_one({"label_fr": value})
-    if external_ref is not None:
-        external_ref["_ref"] = reference_table
-        return True, external_ref
+def get_reference_list(model, field_slug,lang="fr"):
+    rule = get_rule(model, field_slug)
+    display_key = rule["external_model_display_keys"][0]
+    if rule["translation"]:
+        key = "".join([display_key,"_", lang])
     else:
-        error_msg = "ERROR: reference value '{}' not found in '{}' as 'label_fr'".format(value, reference_table)
-        return False, error_msg
-def find_reference_by_label_en(reference_table, value):
-    external_ref = DB[reference_table].find_one({"label_en": value})
-    if external_ref is not None:
-        external_ref["_ref"] = reference_table
-        return True, external_ref
-    else:
-        error_msg = "ERROR: reference value '{}' not found in '{}' as 'label_en'".format(value, reference_table)
-        return False, error_msg
-
+        key = display_key
+    references = DB[rule["reference_table"]].distinct(display_key)
+    return references
 
 def import_datasets():
     print("Create Datasets")
@@ -497,19 +505,26 @@ def translate_missing_references():
             except KeyError:
                 pass
 
-def return_type_example(datatype):
+def get_json_type(datatype):
     if datatype == "dict":
-        return "object", {}
+        return "object"
     elif datatype == "bool":
-        return "boolean", False
+        return "boolean"
     elif datatype == "id":
-        return "string", "61f39f8a701f929ed50e61be" 
+        return "string" 
     elif datatype == "int":
-        return "number", 1
+        return "number"
     elif datatype == "date":
-        return "date", "2017-01-01"
+        return "date"
     else:
-        return "string", ""
+        return "string"
+def get_contraint(rule, lang="fr"):
+    if rule["constraint"] == "oneOf":
+        values = rule["reference_table"].distinct(rule["external_model_display_keys"][0]+"_"+lang)
+        return {"enum": values}
+    elif rule["constraint"] == "unique":
+        return {"unique": True}
+
 def gen_json_item(rule, lang="fr"):
     
     field_json = {
@@ -563,7 +578,6 @@ def create_json_m_simple():
 def create_json_model():
     '''generate JSON empty file from rules table'''
     rules = [rule for rule in DB["rules"].find({},{})]
-    
 
     final_models = {}
     for  model_name, field_rules in itertools.groupby(rules, key=lambda x:x["model"]):
@@ -644,15 +658,105 @@ def create_json_rules_model():
     with open(os.path.join(data_dir, "schemas", "rules.json"), "w") as f:
         f.write(rule_json_schema)
 
-def create_models():
-    class Config:
-        arbitrary_types_allowed = True
+def is_one_of(cls, key, v):
+    assert v in  get_references()
+    assert v.isalnum(), 'must be alphanumeric'
+    return v
 
-    # ModelWithPath = create_model(
-    #     "ModelWithPath", path=(request.param, ...), __config__=Config
-    # )
-    pass
+def convert2json_schema_type(datatype):
+    if datatype == "date":
+        return { "type": "string", "format": "date" }
+    elif datatype == "id":
+        return { "type": "string"}
+    elif datatype == "url":
+        return { "format": "uri", "pattern": "^https?://" }
+    else:
+        return {"type": datatype}
+
+def generate_jsonchema(model_name):
+    '''create json-schema to feed models.py'''
+    model_rules = get_rules(model_name)
+    is_multilang_model = any([r["translation"] for r in model_rules])    
+    if is_multilang_model:
+        for lang in AVAILABLE_LANG:
+            model_name_title = model_name.title()+ lang.upper()
+
+    else:
+        model_name_title = model_name.title()
+        lang = "en"
+def create_model2jsonschema(model_name, model_name_title, model_rules, lang):
+    doc_root = { 
+        "title": model_name_title,
+        "type": "object",
+        "properties": {}
+    }
+    doc_root["required"] =  []
+    doc_root["properties"] = {}
+    doc_root["definitions"] = {name.title(): {} for name in DB.rules.distinct("modele") if name != model_name}
+    for field in model_rules:
+        doc_root["properties"][field["slug"]] = {
+            "title": field[f"name_{lang}"].title(), 
+            "description": field[f"description_{lang}"]    
+            }   
+        if field["mandatory"]:
+            doc_root["required"].append(field["slug"])
+        if field["external_model"] != "":
+            if field["reference_table"] != "":
+                doc_root["definitions"][f"Reference{field['slug'].title()}"] = {"properties": {
+                    g["slug"]:convert2json_schema_type(g["datatype"]) for g in get_rules(field['external_model'].lower())
+            }, "required": [g["slug"] for g in get_rules(field['external_model'].lower()) if g["mandatory"]]}
+            else:
+                doc_root["definitions"][f"{field['external_model'].title()}"]= {"properties": {
+                    g["slug"]:convert2json_schema_type(g["datatype"]) for g in get_rules(field['external_model'].lower())
+            }, "required": [g["slug"] for g in get_rules(field['external_model'].lower()) if g["mandatory"]]}
+        if field["multiple"]:
+            doc_root["properties"][field["slug"]]["type"] = "array"
+            if field["reference_table"] != "":
+                doc_root["properties"][field["slug"]]["items"] = {"$ref": f"#/definitions/Reference{field['slug'].title()}"}
+            else:
+                doc_root["properties"][field["slug"]]["items"] = {"$ref": f"#/definitions/{field['external_model'].title()}"}
+            
+        else:
+            if field["external_model"] != "":
+                if field["reference_table"] != "":
+                    doc_root["properties"][field["slug"]]["items"] = {"$ref": f"#/definitions/Reference{field['slug'].title()}"}
+                else:
+                    doc_root["properties"][field["slug"]]["items"] = {"$ref": f"#/definitions/{field['external_model'].title()}"}
+            else:
+                doc_root["properties"][field["slug"]].update(convert2json_schema_type(field["datatype"]))
+
+
+        
+            
+    # validators = {
+    # 'reference_validator':
+    #     validator('username')(username_alphanumeric)
+    # }
+    # class Config:
+    #     arbitrary_types_allowed = True
+    
+    with open(f"{model_name_title}.json", "w") as f:
+        data = json.dumps(doc_root, indent=4)
+        f.write(data)
+    return f"{model_name_title}.json"
+    
+def create_models():
+    rules = list(DB.rules.find({},{"_id":0}))
+    for model_name, field_rules in itertools.groupby(rules, key=lambda x:x["model"]):
+        model_rules = list(field_rules)
+        is_multilang_model = any([r["translation"] for r in model_rules])
+        if is_multilang_model:
+            for lang in AVAILABLE_LANG:
+                model_name_title = model_name.title()+ lang.upper()
+                create_model2jsonschema(model_name, model_name_title, model_rules, lang)
+
+    else:
+        model_name_title = model_name.title()
+        create_model2jsonschema(model_name, model_name_title, model_rules, lang="en")
+
 if __name__ == '__main__':
     import_rules()
     import_references()
+    # create_model("organization", lang="fr")
+    create_models()
     # create_json_rules_model()
