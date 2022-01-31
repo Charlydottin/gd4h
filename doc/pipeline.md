@@ -3,15 +3,23 @@
 
 ## init_db: from csv to mongodb table
 
-see Beanie as ODM
+- create rules DB
+- 
+Option: see Beanie as ODM
+
+- create a document model using rules
 
 
 ## create_model: from mongodb table to pydantic
 
-create_model building a dict with rules and example 
-  - [ ] add example value in rules.csv => init_db
-add validator using rules
+create_model building a dict from with rules and example
 
+json schema example see Pydantic Doc Code Generation:
+
+
+  - [x] add example value in rules.csv => init_db
+  - [ ] add validator using rules
+  - [ ] declare external ref as ref
 ```
 validators = {
     'username_validator':
@@ -27,6 +35,7 @@ UserModel = create_model(
 
 alternative in CLI datamodel code generator takes a jsonschema and create model.py
 > https://github.com/koxudaxi/datamodel-code-generator
+>
 
 ## populate initial data using rules table to control insertion
 
