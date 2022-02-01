@@ -1,0 +1,72 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Comment",
+    "type": "object",
+    "description": "A comment in the catalog",
+    "$id": "http://gd4h.fr/schemas/comment.json",
+    "properties": {
+        "id": {
+            "title": "Id",
+            "description": "",
+            "unique": true,
+            "type": "string"
+        },
+        "text": {
+            "title": "Commentaire ",
+            "description": "",
+            "type": "string"
+        },
+        "scope": {
+            "title": "Section /Champ",
+            "description": "Niveau du commentaire\u00a0: modele/ section/ champ",
+            "type": "string"
+        },
+        "user": {
+            "title": "Utilisateur",
+            "description": "",
+            "$ref": "#/definitions/User"
+        },
+        "date": {
+            "title": "Date",
+            "description": "",
+            "type": "Date"
+        }
+    },
+    "definitions": {
+        "Scope": {
+            "properties": {
+                "id": null,
+                "name": null,
+                "uri": {
+                    "type": "string"
+                },
+                "table_name": null,
+                "name_en": {
+                    "type": "string"
+                },
+                "name_fr": {
+                    "type": "string"
+                }
+            }
+        },
+        "User": {
+            "properties": {
+                "id": null,
+                "name": null,
+                "email": null,
+                "organization": {
+                    "$ref": "#/schemas/Organization.json"
+                },
+                "role": {
+                    "$ref": "#/schemas/Role.json"
+                }
+            }
+        }
+    },
+    "required": [
+        "text",
+        "scope",
+        "user",
+        "date"
+    ]
+}

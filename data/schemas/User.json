@@ -1,0 +1,77 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "User",
+    "type": "object",
+    "description": "A user in the catalog",
+    "$id": "http://gd4h.fr/schemas/user.json",
+    "properties": {
+        "id": {
+            "title": "Id",
+            "description": "",
+            "unique": true,
+            "type": "string"
+        },
+        "name": {
+            "title": "Nom",
+            "description": "",
+            "unique": true,
+            "type": "string"
+        },
+        "email": {
+            "title": "Email",
+            "description": "",
+            "unique": true,
+            "type": "string"
+        },
+        "organization": {
+            "title": "Organisme",
+            "description": "",
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/Organization"
+            }
+        },
+        "role": {
+            "title": "Role",
+            "description": "Role attribu\u00e9\u00a0: Administrateur/Programmer/Editeur/Reviewer/Public",
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/Role"
+            }
+        }
+    },
+    "definitions": {
+        "Organization": {
+            "properties": {
+                "_id": null,
+                "organization_type": {
+                    "$ref": "#/schemas/Organization_Type.json"
+                },
+                "acronym": null,
+                "agent_type": {
+                    "$ref": "#/schemas/Agent_Type.json"
+                },
+                "image_url": null,
+                "name": null,
+                "url": null,
+                "description": null,
+                "members": {
+                    "$ref": "#/schemas/Members.json"
+                }
+            }
+        },
+        "Role": {
+            "properties": {
+                "id": null,
+                "type": null,
+                "action": null,
+                "perimeter": null
+            }
+        }
+    },
+    "required": [
+        "name",
+        "email",
+        "role"
+    ]
+}

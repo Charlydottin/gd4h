@@ -1,0 +1,95 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "License",
+    "type": "object",
+    "description": "A license in the catalog",
+    "$id": "http://gd4h.fr/schemas/license.json",
+    "properties": {
+        "license_name": {
+            "title": "Nom De La Licence",
+            "description": "Nom de la licence sous laquelle le jeu de donn\u00e9es est rendu disponible",
+            "type": "string"
+        },
+        "license_type": {
+            "title": "Type De Licence",
+            "description": "Type de licence e.g. Domaine public, Droit d\u2019auteur requis (DCAT-AP)",
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "is_opendata": {
+            "title": "Donn\u00e9es Ouvertes",
+            "description": "Est en open data\u00a0?",
+            "type": "boolean"
+        },
+        "license_description": {
+            "title": "Description",
+            "description": "Description de la licence",
+            "type": "string"
+        },
+        "id": {
+            "title": "Id",
+            "description": "",
+            "unique": true,
+            "type": "string"
+        }
+    },
+    "definitions": {
+        "License_Name": {
+            "properties": {
+                "id": null,
+                "name": null,
+                "uri": {
+                    "type": "string",
+                    "enum": [
+                        "",
+                        "https://creativecommons.org/publicdomain/zero/1.0/",
+                        "https://opendefinition.org/licenses/odc-odbl"
+                    ]
+                },
+                "table_name": null,
+                "name_en": {
+                    "type": "string"
+                },
+                "name_fr": {
+                    "type": "string"
+                }
+            }
+        },
+        "License_Type": {
+            "properties": {
+                "id": null,
+                "name": null,
+                "uri": {
+                    "type": "string",
+                    "enum": [
+                        "http://purl.org/adms/licencetype/Attribution",
+                        "http://purl.org/adms/licencetype/GrantBack",
+                        "http://purl.org/adms/licencetype/JurisdictionWithinTheEU",
+                        "http://purl.org/adms/licencetype/KnownPatentEncumbrance",
+                        "http://purl.org/adms/licencetype/NoDerivativeWork",
+                        "http://purl.org/adms/licencetype/NominalCost",
+                        "http://purl.org/adms/licencetype/NonCommercialUseOnly",
+                        "http://purl.org/adms/licencetype/OtherRestrictiveClauses",
+                        "http://purl.org/adms/licencetype/PublicDomain",
+                        "http://purl.org/adms/licencetype/ReservedNames-Endorsement-OfficialStatus",
+                        "http://purl.org/adms/licencetype/RoyaltiesRequired",
+                        "http://purl.org/adms/licencetype/UnknownIPR",
+                        "http://purl.org/adms/licencetype/ViralEffect-ShareAlike"
+                    ]
+                },
+                "table_name": null,
+                "name_en": {
+                    "type": "string"
+                },
+                "name_fr": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "required": [
+        "is_opendata"
+    ]
+}

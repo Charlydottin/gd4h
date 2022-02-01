@@ -1,0 +1,128 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Log",
+    "type": "object",
+    "description": "A log in the catalog",
+    "$id": "http://gd4h.fr/schemas/log.json",
+    "properties": {
+        "id": {
+            "title": "Id",
+            "description": "",
+            "unique": true,
+            "type": "string"
+        },
+        "action": {
+            "title": "Action",
+            "description": "",
+            "type": "string"
+        },
+        "perimeter": {
+            "title": "P\u00e9rim\u00eatre",
+            "description": "",
+            "type": "string"
+        },
+        "user": {
+            "title": "Utilisateurs",
+            "description": "",
+            "type": "string"
+        },
+        "date": {
+            "title": "Date",
+            "description": "",
+            "type": "string",
+            "format": "date-time"
+        }
+    },
+    "definitions": {
+        "Action": {
+            "properties": {
+                "id": null,
+                "name": null,
+                "uri": {
+                    "type": "string",
+                    "enum": [
+                        ""
+                    ]
+                },
+                "table_name": null,
+                "name_en": {
+                    "type": "string",
+                    "enum": [
+                        "add",
+                        "comment",
+                        "create",
+                        "delete",
+                        "edit",
+                        "suggest"
+                    ]
+                },
+                "name_fr": {
+                    "type": "string",
+                    "enum": [
+                        "ajouter",
+                        "commenter",
+                        "cr\u00e9er",
+                        "sugg\u00e9rer",
+                        "supprimer",
+                        "\u00e9diter"
+                    ]
+                }
+            }
+        },
+        "Perimeter": {
+            "properties": {
+                "id": null,
+                "name": null,
+                "uri": {
+                    "type": "string",
+                    "enum": [
+                        ""
+                    ]
+                },
+                "table_name": null,
+                "name_en": {
+                    "type": "string",
+                    "enum": [
+                        "comment",
+                        "dataset",
+                        "organization",
+                        "reference",
+                        "role",
+                        "user"
+                    ]
+                },
+                "name_fr": {
+                    "type": "string",
+                    "enum": [
+                        "commentaire",
+                        "jeu de donn\u00e9es",
+                        "organisme",
+                        "r\u00e9f\u00e9rence",
+                        "r\u00f4le",
+                        "utilisateur"
+                    ]
+                }
+            }
+        },
+        "User": {
+            "properties": {
+                "id": null,
+                "name": null,
+                "email": null,
+                "organization": {
+                    "$ref": "#/schemas/Organization.json"
+                },
+                "role": {
+                    "$ref": "#/schemas/Role.json"
+                }
+            }
+        }
+    },
+    "required": [
+        "id",
+        "action",
+        "perimeter",
+        "user",
+        "date"
+    ]
+}

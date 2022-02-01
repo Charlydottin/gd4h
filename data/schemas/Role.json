@@ -1,0 +1,110 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Role",
+    "type": "object",
+    "description": "A role in the catalog",
+    "$id": "http://gd4h.fr/schemas/role.json",
+    "properties": {
+        "id": {
+            "title": "Id",
+            "description": "",
+            "unique": true,
+            "type": "string"
+        },
+        "type": {
+            "title": "Role",
+            "description": "",
+            "type": "string"
+        },
+        "action": {
+            "title": "Actions ",
+            "description": "",
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "perimeter": {
+            "title": "P\u00e9rim\u00eatre",
+            "description": "",
+            "type": "string"
+        }
+    },
+    "definitions": {
+        "Action": {
+            "properties": {
+                "id": null,
+                "name": null,
+                "uri": {
+                    "type": "string",
+                    "enum": [
+                        ""
+                    ]
+                },
+                "table_name": null,
+                "name_en": {
+                    "type": "string",
+                    "enum": [
+                        "add",
+                        "comment",
+                        "create",
+                        "delete",
+                        "edit",
+                        "suggest"
+                    ]
+                },
+                "name_fr": {
+                    "type": "string",
+                    "enum": [
+                        "ajouter",
+                        "commenter",
+                        "cr\u00e9er",
+                        "sugg\u00e9rer",
+                        "supprimer",
+                        "\u00e9diter"
+                    ]
+                }
+            }
+        },
+        "Perimeter": {
+            "properties": {
+                "id": null,
+                "name": null,
+                "uri": {
+                    "type": "string",
+                    "enum": [
+                        ""
+                    ]
+                },
+                "table_name": null,
+                "name_en": {
+                    "type": "string",
+                    "enum": [
+                        "comment",
+                        "dataset",
+                        "organization",
+                        "reference",
+                        "role",
+                        "user"
+                    ]
+                },
+                "name_fr": {
+                    "type": "string",
+                    "enum": [
+                        "commentaire",
+                        "jeu de donn\u00e9es",
+                        "organisme",
+                        "r\u00e9f\u00e9rence",
+                        "r\u00f4le",
+                        "utilisateur"
+                    ]
+                }
+            }
+        }
+    },
+    "required": [
+        "type",
+        "action",
+        "perimeter"
+    ]
+}

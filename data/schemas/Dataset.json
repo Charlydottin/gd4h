@@ -1,0 +1,1281 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Dataset",
+    "type": "object",
+    "description": "A dataset in the catalog",
+    "$id": "http://gd4h.fr/schemas/dataset.json",
+    "properties": {
+        "id": {
+            "title": "Id",
+            "description": "",
+            "unique": true,
+            "type": "string"
+        },
+        "integration_status": {
+            "title": "Publi\u00e9",
+            "description": "Date \u00e0 laquelle le dataset a \u00e9t\u00e9 propos\u00e9",
+            "type": "boolean"
+        },
+        "state": {
+            "title": "Status",
+            "description": "Statut du jeu de donn\u00e9es\u00a0: proposed\u00a0: propos\u00e9, pending_review\u00a0: attente de revue, invalid\u00a0: a pass\u00e9 les tests est invalide, valid\u00a0: a pass\u00e9 les tests et est valide, published\u00a0: publi\u00e9 ",
+            "type": "boolean"
+        },
+        "last_inserted": {
+            "title": "Date De Derni\u00e8re Insertion",
+            "description": "Date \u00e0 laquelle le dataset a \u00e9t\u00e9 ajout\u00e9 dans la base",
+            "type": "string",
+            "format": "date-time"
+        },
+        "last_modification": {
+            "title": "Date De Derni\u00e8re Modification",
+            "description": "Date \u00e0 laquelle le dataset a \u00e9t\u00e9 mis \u00e0 jour dans la base",
+            "type": "string",
+            "format": "date-time"
+        },
+        "name": {
+            "title": "Nom",
+            "description": "Nom complet du jeu de donn\u00e9es attribu\u00e9 par le producteur",
+            "unique": true,
+            "type": "string"
+        },
+        "acronym": {
+            "title": "Sigle",
+            "description": "Sigle, abbr\u00e9viation du jeu de donn\u00e9es",
+            "unique": true,
+            "type": "string"
+        },
+        "organizations": {
+            "title": "Organismes",
+            "description": "Liste des organismes  producteurs du jeu de donn\u00e9es",
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/Organizations"
+            }
+        },
+        "description": {
+            "title": "Description",
+            "description": "Informations recueillies dans la base\u00a0: Br\u00e8ve description du contenu et de l'objectif du JDD",
+            "type": "string"
+        },
+        "url": {
+            "title": "Lien",
+            "description": "Lien d\u2019acc\u00e8s au jeux de donn\u00e9es/portail",
+            "type": "string",
+            "format": "uri",
+            "pattern": "^https?://"
+        },
+        "contact_type": {
+            "title": "Modalit\u00e9 De Contact",
+            "description": "Modalit\u00e9s de contact",
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "contact": {
+            "title": "Contact",
+            "description": "Contenu du contact",
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "contact_type_comments": {
+            "title": "Commentaires Sur Les Modalit\u00e9s De Contact",
+            "description": "Commentaires sur les modalit\u00e9s de contact",
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/Contact_Type_Comments"
+            }
+        },
+        "dataset_type": {
+            "title": "Type",
+            "description": "Type de jeu de donn\u00e9es\u00a0: Jeu de donn\u00e9es, portail, base de donn\u00e9es",
+            "type": "string"
+        },
+        "environment": {
+            "title": "Milieu",
+            "description": "Milieu\u00a0: Sols / Air / Eaux /Alimentation / NA",
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "nature": {
+            "title": "Nature Et Usage",
+            "description": "Nature et usage\u00a0: Agents physiques / Pesticides / Biodiversit\u00e9 / Indicateurs g\u00e9ographiques et socio-d\u00e9mographiques",
+            "type": "string"
+        },
+        "subthematic": {
+            "title": "Sous Th\u00e9matique",
+            "description": "Theme / categorie  du jeu de donn\u00e9es + Sols / Air / Eaux / Pesticides / Agents Physiques + Th\u00e9matique abord\u00e9e dans le JDD ",
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "exposure_factor": {
+            "title": "Facteur D\u2019Exposition",
+            "description": "Facteur d\u2019exposition\u00a0: tags libres",
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "exposure_factor_category": {
+            "title": "Cat\u00e9gorie De Facteur D\u2019Exposition",
+            "description": "Cat\u00e9gorie de facteur d\u2019exposition\u00a0: Si pertinent, cat\u00e9gorie facteur d'exposition caract\u00e9ris\u00e9 dans le JDD ou dont la jeu peut contribuer \u00e0 la caract\u00e9risation (non exhaustif)",
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "theme_category": {
+            "title": "Cat\u00e9gorie Th\u00e9matique",
+            "description": "Grande cat\u00e9gorie th\u00e9matique selon la norme DCAT AP",
+            "type": "string"
+        },
+        "is_opendata": {
+            "title": "Donn\u00e9es Ouvertes",
+            "description": "Donn\u00e9es ouvertes (O/N)",
+            "type": "boolean"
+        },
+        "license_name": {
+            "title": "Nom De Licence",
+            "description": "Nom de la licence sous laquelle le jeu de donn\u00e9es est rendu disponible",
+            "type": "string"
+        },
+        "license_type": {
+            "title": "Type De Licence",
+            "description": "Type de licence e.g. Domaine public, Droit d\u2019auteur requis (DCAT-AP)",
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "has_restrictions": {
+            "title": "A Des Restrictions",
+            "description": "Accessibilit\u00e9 d\u2019utilisation des donn\u00e9es",
+            "type": "boolean"
+        },
+        "restrictions_comments": {
+            "title": "Commentaires Sur Les Restrictions",
+            "description": "Commentaires sur les modalit\u00e9s d\u2019accessibilit\u00e9 et de r\u00e9utilisation",
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/Restrictions_Comments"
+            }
+        },
+        "has_pricing": {
+            "title": "Tarification",
+            "description": "Le jeu de donn\u00e9es est il payant\u00a0? Si oui pr\u00e9cisez les modalit\u00e9s dans les commentaires",
+            "type": "boolean"
+        },
+        "has_compliance": {
+            "title": "Compliance",
+            "description": "Soumis \u00e0 la r\u00e9glementation RGPD, secret commercial, etc. Si oui pr\u00e9cisez lesquels dans l\u2019espace de commentaires",
+            "type": "boolean"
+        },
+        "pricing_comments": {
+            "title": "Commentaires Sur Les Tarifications",
+            "description": "Commentaiires sur la tarification",
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/Pricing_Comments"
+            }
+        },
+        "compliance_comments": {
+            "title": "Commentaires Sur La Compliance",
+            "description": "Commentaire sur la soumission juridique \u00e0 certaines r\u00e9glementation juridique",
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/Compliance_Comments"
+            }
+        },
+        "data_format": {
+            "title": "Format Des Donn\u00e9es (Dcat Ap)",
+            "description": "Format des fichiers de donn\u00e9es selon la norme DCAT-AP (.pdf .zip .xlsx, etc.)",
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "other_access_points": {
+            "title": "Autres Points D\u2019Acc\u00e8s",
+            "description": "Autre point d\u2019acc\u00e8s pour consulter le jeu de donn\u00e9es",
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "data_domain": {
+            "title": "Domaine  De R\u00e9f\u00e9rence Des Donn\u00e9es",
+            "description": "Cat\u00e9gorie des donn\u00e9es (ex : Sant\u00e9 / Environnement / R\u00e9f\u00e9rentiel)",
+            "type": "string"
+        },
+        "related_referential": {
+            "title": "R\u00e9f\u00e9rentiels Associ\u00e9s",
+            "description": "R\u00e9f\u00e9rentiel(s)  associ\u00e9(s)?",
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "related_datasets": {
+            "title": "Jeux De Donn\u00e9es Associ\u00e9s",
+            "description": "Jeux de donn\u00e9es li\u00e9s",
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/Related_Datasets"
+            }
+        },
+        "automatic_update": {
+            "title": "Mise \u00c0 Jour Automatique",
+            "description": "Y a t\u2019il une mise \u00e0 jour automatique\u00a0?",
+            "type": "boolean"
+        },
+        "broadcast_mode": {
+            "title": "Mode De Diffusion",
+            "description": "Mode de diffusion\u00a0: API / Portail / Process ",
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "documentation_comments": {
+            "title": "Commentaires Sur La Documentation",
+            "description": "Commentaires ajoutant des pr\u00e9cisions sur la documentation",
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/Documentation_Comments"
+            }
+        },
+        "last_updated": {
+            "title": "Derni\u00e8re Mise \u00c0 Jour",
+            "description": "Date de derni\u00e8re mise \u00e0 jour chez le producteur",
+            "type": "string",
+            "format": "date-time"
+        },
+        "downloadable": {
+            "title": "T\u00e9l\u00e9chargeable",
+            "description": "O/N, si non pr\u00e9ciser le type d'acc\u00e8s (dans les commentaires techniques)",
+            "type": "boolean"
+        },
+        "has_documentation": {
+            "title": "Documentation",
+            "description": "Y-a-t-il de la documentation disponible sur les mode de collecte de l\u2019information ou sur l\u2019acces aux donn\u00e9es",
+            "type": "boolean"
+        },
+        "has_filter": {
+            "title": "Filtrage Des Donn\u00e9es",
+            "description": "Y-a-t-il un filtre facilitant la recherche de donn\u00e9es parmi toutes les donn\u00e9es disponibles (ex: filtres par champ th\u00e9matique) ? (O/N)",
+            "type": "boolean"
+        },
+        "has_missing_data": {
+            "title": "Donn\u00e9es Manquantes",
+            "description": "Y a til des donn\u00e9es manquantes\u00a0? Si oui pr\u00e9cisez dans les commentaire lesquelles",
+            "type": "boolean"
+        },
+        "has_search_engine": {
+            "title": "Moteur De Recherche",
+            "description": "Y-a-t-il un moteur de recherche facilitant la recherche de jeux de donn\u00e9es  (ex: par commune) ? (O/N)",
+            "type": "boolean"
+        },
+        "missing_data_comments": {
+            "title": "Commentaires Sur Les Donn\u00e9es Manquantes",
+            "description": "Commentaires indiquants les manques et lacune des jeux de donn\u00e9es",
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/Missing_Data_Comments"
+            }
+        },
+        "technical_comments": {
+            "title": "Commentaires Sur L\u2019Acc\u00e8s Techniques",
+            "description": "Commentaires sur les aspects techniques, accessibilit\u00e9, m\u00e9thode de collecte, moteur de recherche, etc.",
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/Technical_Comments"
+            }
+        },
+        "temporal_scale": {
+            "title": "Echelle Temporelle",
+            "description": "Couverture temporelle\u00a0/ \u00e9chelle temporelle des donn\u00e9es\u00a0: N/A / Minute / Heure / Journalier / Hebdomadaire /  etc.",
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "update_frequency": {
+            "title": "Fr\u00e9quence De Mise \u00c0 Jour",
+            "description": "Fr\u00e9quence de mise \u00e0 jour CF Norme Inspire\u00a0: Temps r\u00e9el / Quotidienne / Hebdomadaire / Mensuelle / Etc.",
+            "type": "string"
+        },
+        "volume": {
+            "title": "Volume",
+            "description": "Volum\u00e9trie des donn\u00e9es",
+            "type": "string"
+        },
+        "year": {
+            "title": "Ann\u00e9e  ",
+            "description": "Profondeur d'historique disponible ",
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "is_geospatial_data": {
+            "title": "Donn\u00e9es G\u00e9ospatiales / G\u00e9olocalis\u00e9e",
+            "description": "Les donn\u00e9es sont elles g\u00e9ospatialis\u00e9es/g\u00e9olocalis\u00e9es\u00a0?",
+            "type": "boolean"
+        },
+        "administrative_territory_coverage": {
+            "title": "Couverture Administrative  Territoriale",
+            "description": "R\u00e9gion g\u00e9ographique couverte par le jeu de donn\u00e9es",
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "geographical_information_level": {
+            "title": "Niveau D\u2019Information G\u00e9ographique",
+            "description": "Unit\u00e9 d\u2019information g\u00e9ographique, Niveau d\u2019information g\u00e9ographique\u00a0: Pays / R\u00e9gion / D\u00e9partement / Intercommunalit\u00e9 / Ville / Quartier / Ilot IRIS INSEE/ Carreau INSEE / coordonn\u00e9es xy / Type d'espace administratif ou autre",
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "projection_system": {
+            "title": "Syst\u00e8me De Projection",
+            "description": "Si g\u00e9olocalis\u00e9e , avec quel syst\u00e8me de projection?",
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "related_geographical_information": {
+            "title": "R\u00e9f\u00e9rentiels G\u00e9ographiques Associ\u00e9s",
+            "description": "R\u00e9f\u00e9rentiel(s) g\u00e9ographique(s) associ\u00e9(s)?",
+            "type": "boolean"
+        },
+        "geographical_geospatial_coverage": {
+            "title": "Couverture G\u00e9ographique/G\u00e9ospatial",
+            "description": "R\u00e9gion g\u00e9ographique couverte par le jeu de donn\u00e9es (DCAT-AP)",
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "geospatial_comments": {
+            "title": "Commentaires G\u00e9ographiques",
+            "description": "Commentaires ajoutant des d\u00e9tails sur l\u2019aspect g\u00e9ospatialis\u00e9s des donn\u00e9es",
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/Geospatial_Comments"
+            }
+        },
+        "comments": {
+            "title": "Commentaires G\u00e9n\u00e9raux",
+            "description": "Commentaires g\u00e9n\u00e9raux sur le jeu de donn\u00e9es",
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/Comments"
+            }
+        },
+        "qualification_comments": {
+            "title": "Commentaires Sur Le Qualification",
+            "description": "Commentaires sur la qualification en Sant\u00e9 Environnement",
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/Qualification_Comments"
+            }
+        },
+        "context_comments": {
+            "title": "Contexte De Production",
+            "description": "Commentaires sur le contexte de production du JDD",
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/Context_Comments"
+            }
+        }
+    },
+    "definitions": {
+        "Organizations": {
+            "properties": {
+                "_id": null,
+                "organization_type": {
+                    "$ref": "#/schemas/Organization_Type.json"
+                },
+                "acronym": null,
+                "agent_type": {
+                    "$ref": "#/schemas/Agent_Type.json"
+                },
+                "image_url": null,
+                "name": null,
+                "url": null,
+                "description": null,
+                "members": {
+                    "$ref": "#/schemas/Members.json"
+                }
+            }
+        },
+        "Contact_Type": {
+            "properties": {
+                "id": null,
+                "name": null,
+                "uri": {
+                    "type": "string",
+                    "enum": [
+                        ""
+                    ]
+                },
+                "table_name": null,
+                "name_en": {
+                    "type": "string",
+                    "enum": [
+                        "Email",
+                        "Formulaire",
+                        "Nom"
+                    ]
+                },
+                "name_fr": {
+                    "type": "string",
+                    "enum": [
+                        "email",
+                        "formulaire",
+                        "name"
+                    ]
+                }
+            }
+        },
+        "Contact_Type_Comments": {
+            "properties": {
+                "id": null,
+                "text": null,
+                "scope": null,
+                "user": {
+                    "$ref": "#/schemas/User.json"
+                },
+                "date": null
+            }
+        },
+        "Dataset_Type": {
+            "properties": {
+                "id": null,
+                "name": null,
+                "uri": {
+                    "type": "string",
+                    "enum": [
+                        ""
+                    ]
+                },
+                "table_name": null,
+                "name_en": {
+                    "type": "string",
+                    "enum": [
+                        "Database",
+                        "Dataset",
+                        "Portal"
+                    ]
+                },
+                "name_fr": {
+                    "type": "string",
+                    "enum": [
+                        "Base de donn\u00e9es",
+                        "Jeu de donn\u00e9es",
+                        "Portail"
+                    ]
+                }
+            }
+        },
+        "Environment": {
+            "properties": {
+                "id": null,
+                "name": null,
+                "uri": {
+                    "type": "string",
+                    "enum": [
+                        ""
+                    ]
+                },
+                "table_name": null,
+                "name_en": {
+                    "type": "string",
+                    "enum": [
+                        "Air",
+                        "Food",
+                        "Soils",
+                        "Water"
+                    ]
+                },
+                "name_fr": {
+                    "type": "string",
+                    "enum": [
+                        "Air",
+                        "Alimentation",
+                        "Eau",
+                        "Sols"
+                    ]
+                }
+            }
+        },
+        "Nature": {
+            "properties": {
+                "id": null,
+                "name": null,
+                "uri": {
+                    "type": "string",
+                    "enum": [
+                        ""
+                    ]
+                },
+                "table_name": null,
+                "name_en": {
+                    "type": "string"
+                },
+                "name_fr": {
+                    "type": "string"
+                }
+            }
+        },
+        "Subthematic": {
+            "properties": {
+                "id": null,
+                "name": null,
+                "uri": {
+                    "type": "string",
+                    "enum": [
+                        ""
+                    ]
+                },
+                "table_name": null,
+                "name_en": {
+                    "type": "string",
+                    "enum": [
+                        "Accidentology",
+                        "Addresses",
+                        "Administrative limitations",
+                        "Aerobiology Air quality: pollen and mold",
+                        "Aggregate and combined spatial exposure indicators",
+                        "Agricultural conditions",
+                        "Agricultural soil quality",
+                        "Air chemistry and transport forecast",
+                        "Air emissions from industry, transport, tertiary and agricultural sectors",
+                        "Air forecast",
+                        "Air quality",
+                        "Air quality and Bruit",
+                        "Air quality and acoustic",
+                        "Air quality in institutions receiving public",
+                        "Air quality: air pollution",
+                        "Ambient air pollution",
+                        "Biocides",
+                        "Bruit",
+                        "Carroyage",
+                        "Cartographic background",
+                        "Cartography of noise associated with traffics",
+                        "Cartography of pollution-sensitive water masses",
+                        "Chemical Contaminants in Food",
+                        "Climate",
+                        "Delimitations of vineyards",
+                        "Descriptive parameters of the French population",
+                        "Exposure of individuals and populations in Europe to UV radiation",
+                        "Forest ecosystems",
+                        "Former French uranium mining sites",
+                        "French Hydrogeological Standards",
+                        "French Hydrographic Standards",
+                        "Geology",
+                        "Geometric Contours of IRIS",
+                        "Groundwater",
+                        "Groundwater pollution",
+                        "Inventory of mine residues",
+                        "Ionizing radiation",
+                        "Knowledge of the pedological landscape",
+                        "Land occupation",
+                        "Levels of exposure to amplified young public music",
+                        "Map of reliefs",
+                        "Metal exposure and professional activities",
+                        "Natural asbestos in tributaries in geological formations",
+                        "Natural sites/ Biodiversity Census",
+                        "Noise measures",
+                        "Pesticides in the air",
+                        "Physical-chemical properties of soils and land use",
+                        "Plant Health Substances Index",
+                        "Pollutant emissions and wastes",
+                        "Polluted sites and soils",
+                        "Pollution / Soil contamination",
+                        "Population exposure to noise",
+                        "Quality of coastal waters",
+                        "Radio frequency",
+                        "Radioactive waste",
+                        "Radioactivity",
+                        "Radon emitted by geological formations",
+                        "Residential premises",
+                        "Road traffic",
+                        "Sales of phytopharmaceutical products",
+                        "Soil inventory and mapping",
+                        "Soil quality",
+                        "Station measurement networks",
+                        "Surface water quality / Knowledge media",
+                        "Urban soil quality",
+                        "Waste management, Sustainable development",
+                        "Water Contaminants",
+                        "Water mass standard",
+                        "Water quality",
+                        "Water-polluted area mapping",
+                        "Weather",
+                        "Wine parks"
+                    ]
+                },
+                "name_fr": {
+                    "type": "string",
+                    "enum": [
+                        "Accidentologie",
+                        "Adresses",
+                        "Amiante naturel en affleurements dans les formations ge\u0301ologiques",
+                        "Anciens sites miniers franc\u0327ais d'uranium",
+                        "A\u00e9robiologie  Qualit\u00e9 de l'air : pollens et moisissures",
+                        "Biocides",
+                        "Bruit",
+                        "Carroyage",
+                        "Carte des reliefs",
+                        "Cartographie des masses d'eau sensibles \u00e0 la pollution",
+                        "Cartographie des zones pollu\u00e9es par l'eau",
+                        "Cartographie du bruit associ\u00e9 aux trafics",
+                        "Climatologie",
+                        "Connaissance du paysage pe\u0301dologique",
+                        "Contaminants chimiques dans l'alimentation",
+                        "Contaminants de l'eau",
+                        "Contours g\u00e9om\u00e9triques des IRIS",
+                        "De\u0301chets radioactifs",
+                        "D\u00e9limitations des parcelles viticoles",
+                        "Eauxs souterraines",
+                        "Ecosyste\u0300mes forestiers",
+                        "Emissions atmosphe\u0301riques des secteurs de l'industrie, du transport,  tertiaire et agricole",
+                        "Emissions polluantes et D\u00e9chets",
+                        "Exposition aux m\u00e9taux et activit\u00e9s professionnelles",
+                        "Exposition des population au bruit",
+                        "Exposure of individuals and populations in Europe to UV radiation",
+                        "Fond cartographique",
+                        "Gestion des de\u0301chets,  D\u00e9veloppement durable",
+                        "G\u00e9ologie",
+                        "Index des substances phytosanitaires",
+                        "Indicateurs d'exposition spatialise\u0301s agre\u0301ge\u0301s et combine\u0301s",
+                        "Inventaire des de\u0301po\u0302ts de re\u0301sidus miniers",
+                        "Inventaire et cartographie des sols",
+                        "Limites administratives",
+                        "Locaux \u00e0 usage d'habitation",
+                        "Mesures de bruit",
+                        "Milieux agricoles",
+                        "M\u00e9t\u00e9orologie",
+                        "Niveaux d'exposition aux musiques amplifi\u00e9es du jeune publique",
+                        "Occupation des sols",
+                        "Param\u00e8tres descriptifs de la population fran\u00e7aise",
+                        "Parcelles vitivinicoles",
+                        "Pesticides dans l'air",
+                        "Pollution / Contamination des sols",
+                        "Pollution atmosph\u00e9rique ambiante",
+                        "Pollution des eaux souterraines",
+                        "Proprie\u0301te\u0301s physico-chimiques des sols et occupation des terres",
+                        "Pr\u00e9vision atmosph\u00e9rique",
+                        "Pr\u00e9vision de la chimie atmosph\u00e9rique et transport",
+                        "Qualite\u0301 agronomique des sols",
+                        "Qualite\u0301 de l\u2019air : pollution atmosphe\u0301rique",
+                        "Qualite\u0301 des eaux littorales",
+                        "Qualit\u00e9 de l'air",
+                        "Qualit\u00e9 de l'air dans les e\u0301tablissements recevant du public",
+                        "Qualit\u00e9 de l'air et Bruit",
+                        "Qualit\u00e9 de l'air et acoustique",
+                        "Qualit\u00e9 de l'eau",
+                        "Qualit\u00e9 des eaux",
+                        "Qualit\u00e9 des eaux de surface / Connaissance milieux",
+                        "Qualit\u00e9 des sols",
+                        "Qualit\u00e9 des sols urbains",
+                        "Radioactivit\u00e9",
+                        "Radiofr\u00e9quence",
+                        "Radon \u00e9mis par les formations g\u00e9ologiques",
+                        "Rayonnements ionisants",
+                        "Recensement des sites naturels/ biodiversite\u0301",
+                        "R\u00e9f\u00e9rentiel de masse d'eau",
+                        "R\u00e9f\u00e9rentiel hydrographique fran\u00e7ais",
+                        "R\u00e9f\u00e9rentiel hydrog\u00e9ologique fran\u00e7ais",
+                        "R\u00e9seaux de mesure de stations",
+                        "Sites et sols pollu\u00e9s",
+                        "Trafic routier",
+                        "Ventes de produits phytopharmaceutiques"
+                    ]
+                }
+            }
+        },
+        "Exposure_Factor_Category": {
+            "properties": {
+                "id": null,
+                "name": null,
+                "uri": {
+                    "type": "string",
+                    "enum": [
+                        ""
+                    ]
+                },
+                "table_name": null,
+                "name_en": {
+                    "type": "string",
+                    "enum": [
+                        "air",
+                        "air pollution",
+                        "alimentation pollution",
+                        "asbestos",
+                        "biocides",
+                        "drinking water pollution",
+                        "indoor air pollution",
+                        "metals",
+                        "meteorological factors",
+                        "noise",
+                        "nvdi",
+                        "organic compounds",
+                        "pesticides",
+                        "plant protection products and substances",
+                        "professional exposure",
+                        "radiation",
+                        "radio waves",
+                        "radioactivity",
+                        "sociodemographical indicators",
+                        "soils pollution",
+                        "waste",
+                        "water pollution"
+                    ]
+                },
+                "name_fr": {
+                    "type": "string",
+                    "enum": [
+                        "air",
+                        "amiante",
+                        "biocides",
+                        "bruit",
+                        "compos\u00e9s organiques",
+                        "d\u00e9chets",
+                        "exposition professionnelles",
+                        "facteurs m\u00e9t\u00e9orologiques",
+                        "indicateurs socio-d\u00e9mographiques",
+                        "m\u00e9taux",
+                        "ndvi",
+                        "ondes radio\u00e9lectriques",
+                        "pesticides",
+                        "polluants de l'air int\u00e9rieur",
+                        "polluants de l'alimentation",
+                        "polluants de l'eau",
+                        "polluants de l'eau de boisson",
+                        "polluants de l\u2019air",
+                        "polluants des sols",
+                        "produits et substances phytopharmaceutiques",
+                        "radiation",
+                        "radioactivit\u00e9"
+                    ]
+                }
+            }
+        },
+        "Theme_Category": {
+            "properties": {
+                "id": null,
+                "name": null,
+                "uri": {
+                    "type": "string",
+                    "enum": [
+                        "http://publications.europa.eu/resource/authority/data-theme/AGRI",
+                        "http://publications.europa.eu/resource/authority/data-theme/ENVI",
+                        "http://publications.europa.eu/resource/authority/data-theme/HEAL",
+                        "http://publications.europa.eu/resource/authority/data-theme/REGI",
+                        "http://publications.europa.eu/resource/authority/data-theme/SOCI",
+                        "http://publications.europa.eu/resource/authority/data-theme/TRAN"
+                    ]
+                },
+                "table_name": null,
+                "name_en": {
+                    "type": "string",
+                    "enum": [
+                        "Agriculture and Fisheries",
+                        "Environment",
+                        "Health",
+                        "Population and Society",
+                        "Regions and Cities",
+                        "Transport"
+                    ]
+                },
+                "name_fr": {
+                    "type": "string",
+                    "enum": [
+                        "Agriculture, p\u00eache, sylviculture et alimentation",
+                        "Environnement",
+                        "Population et soci\u00e9t\u00e9",
+                        "R\u00e9gions et villes",
+                        "Sant\u00e9",
+                        "Transports"
+                    ]
+                }
+            }
+        },
+        "License_Name": {
+            "properties": {
+                "id": null,
+                "name": null,
+                "uri": {
+                    "type": "string",
+                    "enum": [
+                        "",
+                        "https://creativecommons.org/publicdomain/zero/1.0/",
+                        "https://opendefinition.org/licenses/odc-odbl"
+                    ]
+                },
+                "table_name": null,
+                "name_en": {
+                    "type": "string"
+                },
+                "name_fr": {
+                    "type": "string"
+                }
+            }
+        },
+        "License_Type": {
+            "properties": {
+                "id": null,
+                "name": null,
+                "uri": {
+                    "type": "string",
+                    "enum": [
+                        "http://purl.org/adms/licencetype/Attribution",
+                        "http://purl.org/adms/licencetype/GrantBack",
+                        "http://purl.org/adms/licencetype/JurisdictionWithinTheEU",
+                        "http://purl.org/adms/licencetype/KnownPatentEncumbrance",
+                        "http://purl.org/adms/licencetype/NoDerivativeWork",
+                        "http://purl.org/adms/licencetype/NominalCost",
+                        "http://purl.org/adms/licencetype/NonCommercialUseOnly",
+                        "http://purl.org/adms/licencetype/OtherRestrictiveClauses",
+                        "http://purl.org/adms/licencetype/PublicDomain",
+                        "http://purl.org/adms/licencetype/ReservedNames-Endorsement-OfficialStatus",
+                        "http://purl.org/adms/licencetype/RoyaltiesRequired",
+                        "http://purl.org/adms/licencetype/UnknownIPR",
+                        "http://purl.org/adms/licencetype/ViralEffect-ShareAlike"
+                    ]
+                },
+                "table_name": null,
+                "name_en": {
+                    "type": "string"
+                },
+                "name_fr": {
+                    "type": "string"
+                }
+            }
+        },
+        "Restrictions_Comments": {
+            "properties": {
+                "id": null,
+                "text": null,
+                "scope": null,
+                "user": {
+                    "$ref": "#/schemas/User.json"
+                },
+                "date": null
+            }
+        },
+        "Pricing_Comments": {
+            "properties": {
+                "id": null,
+                "text": null,
+                "scope": null,
+                "user": {
+                    "$ref": "#/schemas/User.json"
+                },
+                "date": null
+            }
+        },
+        "Compliance_Comments": {
+            "properties": {
+                "id": null,
+                "text": null,
+                "scope": null,
+                "user": {
+                    "$ref": "#/schemas/User.json"
+                },
+                "date": null
+            }
+        },
+        "Data_Format": {
+            "properties": {
+                "id": null,
+                "name": null,
+                "uri": {
+                    "type": "string",
+                    "enum": [
+                        ""
+                    ]
+                },
+                "table_name": null,
+                "name_en": {
+                    "type": "string",
+                    "enum": [
+                        "ascii",
+                        "binary",
+                        "cartography",
+                        "csv",
+                        "date",
+                        "digits",
+                        "image",
+                        "integer",
+                        "map",
+                        "numbers",
+                        "ods",
+                        "pdf",
+                        "reporting",
+                        "text",
+                        "vector",
+                        "xls"
+                    ]
+                },
+                "name_fr": {
+                    "type": "string",
+                    "enum": [
+                        "ascii",
+                        "binaire",
+                        "carte",
+                        "cartographie",
+                        "chiffres",
+                        "csv",
+                        "date",
+                        "image",
+                        "integer",
+                        "nombres",
+                        "ods",
+                        "pdf",
+                        "rapport",
+                        "texte",
+                        "vector",
+                        "xls"
+                    ]
+                }
+            }
+        },
+        "Data_Domain": {
+            "properties": {
+                "id": null,
+                "name": null,
+                "uri": {
+                    "type": "string",
+                    "enum": [
+                        ""
+                    ]
+                },
+                "table_name": null,
+                "name_en": {
+                    "type": "string",
+                    "enum": [
+                        "Environment",
+                        "Health",
+                        "Standards"
+                    ]
+                },
+                "name_fr": {
+                    "type": "string",
+                    "enum": [
+                        "Environnement",
+                        "R\u00e9f\u00e9rentiel",
+                        "Sant\u00e9"
+                    ]
+                }
+            }
+        },
+        "Related_Datasets": {
+            "properties": {
+                "id": null,
+                "integration_status": null,
+                "state": null,
+                "last_inserted": null,
+                "last_modification": null,
+                "name": null,
+                "acronym": null,
+                "organizations": {
+                    "$ref": "#/schemas/Organizations.json"
+                },
+                "description": null,
+                "url": null,
+                "contact_type": null,
+                "contact": null,
+                "contact_type_comments": {
+                    "$ref": "#/schemas/Contact_Type_Comments.json"
+                },
+                "dataset_type": null,
+                "environment": null,
+                "nature": null,
+                "subthematic": null,
+                "exposure_factor": null,
+                "exposure_factor_category": null,
+                "theme_category": null,
+                "is_opendata": null,
+                "license_name": null,
+                "license_type": null,
+                "has_restrictions": null,
+                "restrictions_comments": {
+                    "$ref": "#/schemas/Restrictions_Comments.json"
+                },
+                "has_pricing": null,
+                "has_compliance": null,
+                "pricing_comments": {
+                    "$ref": "#/schemas/Pricing_Comments.json"
+                },
+                "compliance_comments": {
+                    "$ref": "#/schemas/Compliance_Comments.json"
+                },
+                "data_format": null,
+                "other_access_points": null,
+                "data_domain": null,
+                "related_referential": null,
+                "related_datasets": {
+                    "$ref": "#/schemas/Related_Datasets.json"
+                },
+                "automatic_update": null,
+                "broadcast_mode": null,
+                "documentation_comments": {
+                    "$ref": "#/schemas/Documentation_Comments.json"
+                },
+                "last_updated": null,
+                "downloadable": null,
+                "has_documentation": null,
+                "has_filter": null,
+                "has_missing_data": null,
+                "has_search_engine": null,
+                "missing_data_comments": {
+                    "$ref": "#/schemas/Missing_Data_Comments.json"
+                },
+                "technical_comments": {
+                    "$ref": "#/schemas/Technical_Comments.json"
+                },
+                "temporal_scale": null,
+                "update_frequency": null,
+                "volume": null,
+                "year": null,
+                "is_geospatial_data": null,
+                "administrative_territory_coverage": null,
+                "geographical_information_level": null,
+                "projection_system": null,
+                "related_geographical_information": null,
+                "geographical_geospatial_coverage": null,
+                "geospatial_comments": {
+                    "$ref": "#/schemas/Geospatial_Comments.json"
+                },
+                "comments": {
+                    "$ref": "#/schemas/Comments.json"
+                },
+                "qualification_comments": {
+                    "$ref": "#/schemas/Qualification_Comments.json"
+                },
+                "context_comments": {
+                    "$ref": "#/schemas/Context_Comments.json"
+                }
+            }
+        },
+        "Broadcast_Mode": {
+            "properties": {
+                "id": null,
+                "name": null,
+                "uri": {
+                    "type": "string",
+                    "enum": [
+                        ""
+                    ]
+                },
+                "table_name": null,
+                "name_en": {
+                    "type": "string",
+                    "enum": [
+                        "API",
+                        "Portal",
+                        "Process"
+                    ]
+                },
+                "name_fr": {
+                    "type": "string",
+                    "enum": [
+                        "API",
+                        "Portail",
+                        "Process"
+                    ]
+                }
+            }
+        },
+        "Documentation_Comments": {
+            "properties": {
+                "id": null,
+                "text": null,
+                "scope": null,
+                "user": {
+                    "$ref": "#/schemas/User.json"
+                },
+                "date": null
+            }
+        },
+        "Missing_Data_Comments": {
+            "properties": {
+                "id": null,
+                "text": null,
+                "scope": null,
+                "user": {
+                    "$ref": "#/schemas/User.json"
+                },
+                "date": null
+            }
+        },
+        "Technical_Comments": {
+            "properties": {
+                "id": null,
+                "text": null,
+                "scope": null,
+                "user": {
+                    "$ref": "#/schemas/User.json"
+                },
+                "date": null
+            }
+        },
+        "Administrative_Territory_Coverage": {
+            "properties": {
+                "id": null,
+                "name": null,
+                "uri": {
+                    "type": "string"
+                },
+                "table_name": null,
+                "name_en": {
+                    "type": "string"
+                },
+                "name_fr": {
+                    "type": "string"
+                }
+            }
+        },
+        "Geographical_Information_Level": {
+            "properties": {
+                "id": null,
+                "name": null,
+                "uri": {
+                    "type": "string",
+                    "enum": [
+                        ""
+                    ]
+                },
+                "table_name": null,
+                "name_en": {
+                    "type": "string"
+                },
+                "name_fr": {
+                    "type": "string"
+                }
+            }
+        },
+        "Projection_System": {
+            "properties": {
+                "id": null,
+                "name": null,
+                "uri": {
+                    "type": "string",
+                    "enum": [
+                        ""
+                    ]
+                },
+                "table_name": null,
+                "name_en": {
+                    "type": "string",
+                    "enum": [
+                        "Extended Lambert 2",
+                        "GPS",
+                        "Lambert 93",
+                        "Not specified",
+                        "RFG93",
+                        "UTM",
+                        "WGS84",
+                        "x/y coordinates"
+                    ]
+                },
+                "name_fr": {
+                    "type": "string",
+                    "enum": [
+                        "Coordonn\u00e9es x/y",
+                        "GPS",
+                        "Lambert 2 \u00e9tendu",
+                        "Lambert 93",
+                        "Non sp\u00e9cifi\u00e9",
+                        "RGF93",
+                        "UTM",
+                        "WGS84"
+                    ]
+                }
+            }
+        },
+        "Geographical_Geospatial_Coverage": {
+            "properties": {
+                "id": null,
+                "name": null,
+                "uri": {
+                    "type": "string"
+                },
+                "table_name": null,
+                "name_en": {
+                    "type": "string"
+                },
+                "name_fr": {
+                    "type": "string"
+                }
+            }
+        },
+        "Geospatial_Comments": {
+            "properties": {
+                "id": null,
+                "text": null,
+                "scope": null,
+                "user": {
+                    "$ref": "#/schemas/User.json"
+                },
+                "date": null
+            }
+        },
+        "Comments": {
+            "properties": {
+                "id": null,
+                "text": null,
+                "scope": null,
+                "user": {
+                    "$ref": "#/schemas/User.json"
+                },
+                "date": null
+            }
+        },
+        "Qualification_Comments": {
+            "properties": {
+                "id": null,
+                "text": null,
+                "scope": null,
+                "user": {
+                    "$ref": "#/schemas/User.json"
+                },
+                "date": null
+            }
+        },
+        "Context_Comments": {
+            "properties": {
+                "id": null,
+                "text": null,
+                "scope": null,
+                "user": {
+                    "$ref": "#/schemas/User.json"
+                },
+                "date": null
+            }
+        }
+    },
+    "required": [
+        "name",
+        "organizations",
+        "description",
+        "url",
+        "dataset_type",
+        "exposure_factor_category",
+        "is_opendata",
+        "data_domain"
+    ]
+}

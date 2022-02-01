@@ -125,3 +125,192 @@ def import_datasets():
             created_datasets.append(ds.inserted_id)
     for id in created_datasets:
         DB.logs.insert_one(create_logs("admin", "create", "dataset", True, "OK", scope=None, ref_id=id))
+
+def link_organizations_to_datasets():
+    not_found_orgs = []
+    for dataset in DB.datasets.find({}, {"_id": 1, "organizations":1}):
+        orgs = []
+        for org in dataset["organizations"]:
+            existing_org = DB.organizations.find_one({"name": org["name"]})
+            
+            if existing_org is None:
+                not_found_orgs.append(org["name"])
+                DB.logs.insert_one(create_logs("admin", "edit", "dataset", False, "Organization '{}' not found".format(org["name"]), scope="organizations", ref_id=dataset["_id"]))
+            else:
+                orgs.append(existing_org)
+        log = create_logs("admin", "edit", "dataset", True, "OK", scope="organizations", ref_id=dataset["_id"])
+        DB.datasets.update_one({"_id": dataset["_id"]},{"$set": {"organizations":orgs}})
+        DB.logs.insert_one(log)
+    print("Missing orgs ", set(not_found_orgs))
+    
+def register_dataset_comments():
+    dataset = DB.datasets.find_one()
+    comments_fields =  {key:1 for key in dataset if "comment" in key}
+    comments_fields["_id"] = 1
+    for dataset in DB.datasets.find({}, comments_fields):
+        dataset_id = dataset["_id"]
+        del dataset["_id"]
+        for k,v in dataset.items():
+            for c in v:
+                register_comment(c, "dataset", k, dataset_id)
+
+def translate_datasets():
+    for dataset in DB.datasets.find({}):
+        for k,v in dataset.items():
+            if isinstance(v, dict):
+                if v["label_en"] is None and v["label_fr"] is not None:
+                    status, ref = find_reference_by_label_fr("ref_"+k, v["label_fr"])
+                    if status:
+                        v["label_en"] = ref["label_en"]
+                    else:
+                        v["label_en"] = translate(v["label_fr"])
+                    DB.datasets.update_one({"_id": dataset["_id"]}, {"$set": {k:v}})
+                    
+                    continue
+                elif v["label_fr"] is None and v["label_en"] is not None:
+                    status, ref = find_reference_by_label_fr("ref_"+k, v["label_en"])
+                    if status:
+                        v["label_fr"] = ref["label_fr"]
+                    else:
+                        v["label_fr"] = translate(l["label_en"])
+                    DB.datasets.update_one({"_id": dataset["_id"]}, {"$set": {k:v}})            
+                    continue
+                
+            if isinstance(v, list):
+                update = False
+                if k not in ["organizations"]:
+                    for l in v:    
+                        if isinstance(l, dict):    
+                            if l["label_en"] is None and l["label_fr"] is not None:
+                                status, ref = find_reference_by_label_fr("ref_"+k, l["label_fr"])
+                                if status:
+                                    l["label_en"] = ref["label_en"]
+                                else:
+                                    l["label_en"] = translate(l["label_fr"])
+                                update = True
+                            elif l["label_fr"] is None and l["label_en"] is not None:
+                                status, ref = find_reference_by_label_fr("ref_"+k, v["label_en"])
+                                if status:
+                                    l["label_fr"] = ref["label_fr"]
+                                else:
+                                    l["label_fr"] = translate(l["label_en"])
+                                update = True
+                if update:
+                    DB.datasets.update_one({"_id": dataset["_id"]}, {"$set": {k:v}})            
+                    continue
+def translate_fr_references():
+    print("Translate references from FR > EN")
+    for tablename in DB.references.distinct("tablename"):
+        for ref_value in DB[tablename].find({"$or":[{"label_en": ""},{"label_en": None}], "label_fr":{"$nin": ["", None]}}, {"_id":1, "label_fr":1}):
+            try: 
+                value_en = translate(ref_value["label_fr"], _from="fr")
+                DB[tablename].update_one({"_id": ref_value["_id"]}, {"$set": {"label_en": value_en} })
+            except KeyError:
+                pass
+def translate_en_references():
+    print("Translate references from EN > FR")
+    for tablename in DB.references.distinct("tablename"):
+        for ref_value in DB[tablename].find({"$or":[{"label_fr": ""},{"label_fr": None}], "label_en":{"$nin": ["", None]}}, {"_id":1, "label_en":1}):
+            try: 
+                
+                value_fr = translate(ref_value["label_en"], _from="en")
+                DB[tablename].update_one({"_id": ref_value["_id"]}, {"$set": {"label_fr": value_fr} })
+            except KeyError:
+                pass
+
+def translate_missing_references():
+    for tablename in DB.references.distinct("tablename"):
+        for ref_value in DB[tablename].find({"$or":[{"label_en": ""},{"label_en": None}], "label_fr":{"$nin": ["", None]}}, {"_id":1, "label_fr":1}):
+            try: 
+                value_en = translate(ref_value["label_fr"], _from="fr")
+                DB[tablename].update_one({"_id": ref_value["_id"]}, {"$set": {"label_en": value_en} })
+            except KeyError:
+                pass
+    for tablename in DB.references.distinct("tablename"):
+        for ref_value in DB[tablename].find({"$or":[{"label_fr": ""},{"label_fr": None}], "label_en":{"$nin": ["", None]}}, {"_id":1, "label_en":1}):
+            try: 
+                
+                value_fr = translate(ref_value["label_en"], _from="en")
+                DB[tablename].update_one({"_id": ref_value["_id"]}, {"$set": {"label_fr": value_fr} })
+            except KeyError:
+                pass
+def create_default_users():
+    default_users = [{
+        "email": "constance.de-quatrebarbes@developpement-durable.gouv.fr", 
+        "first_name": "Constance", 
+        "last_name": "de Quatrebarbes", 
+        "username": "c24b",
+        "organization": "GD4H",
+        "roles": ["admin", "expert"],
+        "is_active": True, 
+        "is_superuser": True,
+        "lang": "fr"
+    },{
+        "email": "gd4h-catalogue@developpement-durable.gouv.fr", 
+        "first_name": "GD4H", 
+        "last_name": "Catalogue", 
+        "username": "admin",
+        "organization": "GD4H",
+        "roles": ["admin", "expert"],
+        "is_active": True, 
+        "is_superuser": True,
+        "lang": "fr"
+    }]
+    _id = DB.users.insert_many(default_users)
+    create_logs("admin", action="create", perimeter="user",status=True, message="OK", scope=None, ref_id=_id.inserted_ids )
+    pipeline = [ {'$project': {"id": {'$toString': "$_id"}, "_id": 0,"value": 1}}]
+    DB.users.aggregate(pipeline)
+    # print(_id.inserted_ids)
+    return _id.inserted_ids 
+
+def create_comment(username, text="Ceci est un commentaire test"):
+    default_user = DB.users.find_one({"username": username}, {"username": 1, "lang": 1})
+    if default_user is None:
+        raise Exception(username, "not found")
+    default_lang = default_user["lang"]
+    clean_text = bleach.linkify(bleach.clean(text))
+    alternate_lang = SWITCH_LANGS[default_lang]
+    alternate_text = translate(clean_text, _from=default_lang)
+    comment = {"label_"+default_lang: clean_text, "label_"+alternate_lang: alternate_text, "date":datetime.datetime.now(), "user": default_user["username"]}
+    return comment
+
+def register_comment(comment, perimeter, scope, ref_id):
+    comment["perimeter"] = perimeter
+    comment["scope"] = scope #field
+    comment["ref_id"] = ref_id
+    DB.comments.insert_one(comment)
+    
+
+
+def create_logs(username, action, perimeter, status=True,  message="OK", scope=None, ref_id=None):
+    default_user = DB.users.find_one({"username": username}, {"username":1})
+    default_lang = "en"
+    default_label = "label_en"
+    ref_perimeter = DB["ref_perimeter"].find_one({default_label: perimeter}, {"_id":0} )
+    ref_action = DB["ref_action"].find_one({default_label: perimeter}, {"_id":0})
+    try:
+        assert ref_perimeter is not None
+    except AssertionError:
+        raise ValueError(f"Log has no perimeter :'{perimeter}'")
+        assert ref_action is not None
+    except AssertionError:
+        raise ValueError(f"Log has no action {perimeter}")
+    return {
+                "user": username,
+                "action": action,
+                "perimeter": perimeter,
+                "scope": scope,
+                "ref_id": ref_id, 
+                "date": datetime.datetime.now(),
+                "status": status,
+                "message": message
+            }
+
+def init_data():
+    DB.organizations.drop()
+    import_organizations()
+    DB.datasets.drop()
+    import_dataset()
+    link_dataset2organizations()
+    register_comments()
+
