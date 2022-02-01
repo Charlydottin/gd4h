@@ -29,7 +29,8 @@
         "date": {
             "title": "Date",
             "description": "",
-            "type": "Date"
+            "type": "string",
+            "format": "date-time"
         }
     },
     "definitions": {
