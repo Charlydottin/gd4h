@@ -68,6 +68,8 @@
                 "name": null,
                 "uri": {
                     "type": "string",
+                    "format": "uri",
+                    "pattern": "^https?://",
                     "enum": [
                         ""
                     ]
@@ -123,6 +125,8 @@
                 "name": null,
                 "uri": {
                     "type": "string",
+                    "format": "uri",
+                    "pattern": "^https?://",
                     "enum": [
                         "http://purl.org/adms/publishertype/Academia-ScientificOrganisation",
                         "http://purl.org/adms/publishertype/Company",

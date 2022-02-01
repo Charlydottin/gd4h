@@ -87,7 +87,7 @@ id,comment,comments.id,id,id,ADMIN,,,False,,,False,False,unique,id,False,False,1
 text,comment,comments.text,Commentaire ,Comment ,ADMIN,,,False,,,False,False,None,string,False,False,2,1,1,-1,True,False,False,,,,
 scope,comment,comments.scope,Section /champ,Scope,ADMIN,reference,name,True,ref_scope,,False,False,None,string,False,False,3,2,2,-1,True,True,False,Niveau du commentaire : modele/ section/ champ,,,
 user,comment,comments.user,Utilisateur,User ,ADMIN,user,,False,,,False,False,None,object,False,False,4,3,3,-1,True,False,False,,,,
-date,comment,comments.date,Date,Date ,ADMIN,,,False,,,False,False,None,Date,False,False,5,4,4,-1,True,False,False,,,,
+date,comment,comments.date,Date,Date ,ADMIN,,,False,,,False,False,None,date,False,False,5,4,4,-1,True,False,False,,,,
 id,role,roles.id,id,id,ADMIN,,,False,,,False,False,unique,id,False,False,1,-1,5,-1,False,False,False,,,,
 type,role,roles.type,Role,Role,ADMIN,,,False,,,True,False,enum,string,False,False,2,1,1,-1,True,True,False,,,,
 action,role,roles.action,Actions ,Actions,ADMIN,reference,name,True,ref_action,,False,True,enum,string,False,False,3,2,2,-1,True,True,False,,,,

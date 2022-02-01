@@ -39,10 +39,10 @@ def create_org_json_schema():
     # class Config:
     #     arbitrary_types_allowed = True
     one_record = DB.organizations.find_one({},{"_id":0})
-    validators = {
-    'reference_validator':
-        validator('agent_type')(check_value(agent_type))
-    }
+    # validators = {
+    # 'reference_validator':
+    #     validator('agent_type')(check_value(agent_type))
+    # }
     
     rule_model = create_model("Organization", **one_record["fr"], __config__=Config)
     rule_json_schema = rule_model.schema_json()

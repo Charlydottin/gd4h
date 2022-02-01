@@ -1,21 +1,20 @@
 #!/usr/bin/env python3
 
-import itertools
 import os
-import datetime
-import string
-import bleach
 from pymongo import MongoClient
 from csv import DictReader, DictWriter
 import json
 from argostranslate import package, translate
 
-# from pydantic import create_model 
+from pydantic import create_model 
 # from pydantic import BaseModel, ValidationError, validator
-from typing import Optional, List
+# from typing import Optional, List
 from itertools import groupby
 import subprocess
-
+from jsonschema_to_openapi.convert import convert
+# from pathlib import Path
+# from tempfile import TemporaryDirectory
+# from datamodel_code_generator import InputFileType, generate
 curr_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(curr_dir)
 data_dir = os.path.join(parent_dir, "data")
@@ -23,7 +22,7 @@ meta_dir = os.path.join(data_dir, "meta")
 schema_dir = os.path.join(data_dir, "schemas")
 dataset_dir = os.path.join(data_dir, "dataset")
 organization_dir = os.path.join(data_dir, "organization")
-
+model_dir = os.path.join(os.path.dirname(parent_dir), "back", "models")
 
 DATABASE_NAME = "GD4H_V2"
 mongodb_client = MongoClient("mongodb://localhost:27017")
@@ -79,7 +78,7 @@ def import_rules():
                     except ValueError:
                         row[k] = str(v)
             _id = DB[coll_name].insert_one(row).inserted_id
-            print(row)
+            
 
 def import_references():
     ''' import_references() 
@@ -168,28 +167,14 @@ def get_rule(model, field_slug):
 
 def get_rules(model):
     '''get rule for given model and given field'''
-    rules = DB.rules.find({"model": model},{"_id":0})
-    return list(rules)
-
-def get_references(field, lang="en"):
-    '''get reference from given field name and lang'''
-    if field.endswith("_fr"):
-        lang = "fr"
-    return DB["ref_"+field].distinct(f"name_{lang}")
-    
-
-def get_reference_list(model, field_slug,lang="fr"):
-    rule = get_rule(model, field_slug)
-    display_key = rule["external_model_display_keys"][0]
-    if rule["translation"]:
-        key = "".join([display_key,"_", lang])
-    else:
-        key = display_key
-    references = DB[rule["reference_table"]].distinct(display_key)
-    return references
+    return list(DB.rules.find({"model": model},{"_id":0}))
 
            
 def get_json_type(rule):
+    '''
+    given key 'datatype' in rule record transform it into jsonschema datatype  
+    given key 'constraint' in rule record add constraint
+    '''
     datatype = {}
     if rule["constraint"] == "unique":
         datatype["unique"] = True
@@ -215,10 +200,20 @@ def get_json_type(rule):
     return datatype
 
 def get_json_ref_type(rule, ref_rule):
+    ''' special case for external models 
+    given rule 
+    - if rule model is a reference and slug is name_fr or name_en or uri
+    add enum validation and type
+    - if rule model is an external model refer to external schema
+    '''
     datatype = {}
     if rule["model"] == "reference" and rule["slug"] in ["name_fr", "name_en", "uri"]:
-        print(rule["field_id"], ref_rule["reference_table"])
-        datatype["type"] = "string"
+        if rule["slug"] == "uri":
+            datatype["type"] = "string"
+            datatype["format"] = "uri"
+            datatype["pattern"] = "^https?://"
+        else:
+            datatype["type"] = "string"
         datatype["enum"] = DB[ref_rule["reference_table"]].distinct(rule["slug"])
         if len(datatype["enum"]) == 0:
             del datatype["enum"]
@@ -231,12 +226,15 @@ def get_json_ref_type(rule, ref_rule):
         return get_json_type(rule)
 
 def create_rules_json_schema():
+    '''create json schema using example loaded into pydantic.create_model'''
     rule_model = create_model("Rules", **DB.rules.find_one({},{"_id":0}))
     rule_json_schema = rule_model.schema_json()
     with open(os.path.join(data_dir, "schemas", "rules.json"), "w") as f:
         f.write(rule_json_schema)
+   
 
 def create_reference_json_schema():
+    '''create json schema using example loaded into pydantic.create_model'''
     rule_model = create_model("Reference", **DB.rules.find_one({},{"_id":0}))
     rule_json_schema = rule_model.schema_json()
     with open(os.path.join(schema_dir, "references.json"), "w") as f:
@@ -244,6 +242,7 @@ def create_reference_json_schema():
 
 
 def create_json_schema(model_name, model_name_title, model_rules, lang):
+    '''Given rules for one model build a jsonschema dict'''
     if model_name not in DB.rules.distinct("model"):
         raise NameError("Model: {} doesn't exists".format(model_name))
     doc_root = { 
@@ -280,52 +279,115 @@ def create_json_schema(model_name, model_name_title, model_rules, lang):
         }  for field in model_rules if field["external_model"]!=""
     }
     doc_root["required"] = get_mandatory_fields(model_name)
-            
-                
-    # validators = {
-    # 'reference_validator':
-    #     validator('username')(username_alphanumeric)
-    # }
-    # class Config:
-    #     arbitrary_types_allowed = True
-    
-    with open(os.path.join(schema_dir, f"{model_name_title}.json"), "w") as f:
-        data = json.dumps(doc_root, indent=4)
+                           
+    # with open(os.path.join(schema_dir, f"{model_name_title}.json"), "w") as f:
+    #     data = json.dumps(doc_root, indent=4)
+    #     f.write(data)
+    # return os.path.join(schema_dir, f"{model_name_title}.json")
+    return doc_root
+def save_json_schema(model_name, json_data):
+    '''savec generated json_schema into data/schema/'''
+    json_filepath = os.path.join(schema_dir, f"{model_name.title()}.json")
+    with open(json_filepath, "w") as f:
+        data = json.dumps(json_data, indent=4)
         f.write(data)
-    return os.path.join(schema_dir, f"{model_name_title}.json")
-    
+    return json_filepath
+def convert_jsonschema_to_openapi(model_name, json_data):
+    return convert(json_data)
+
+
 def create_json_schemas():
-    rules = list(DB.rules.find({},{"_id":0}))
-    for model_name, field_rules in itertools.groupby(rules, key=lambda x:x["model"]):
-        model_rules = list(field_rules)
-    #     is_multilang_model = any([r["translation"] for r in model_rules])
-    #     if is_multilang_model:
-    #         for lang in AVAILABLE_LANG:
-    #             model_name_title = model_name.title()+ lang.upper()
-    #             create_model2jsonschema(model_name, model_name_title, model_rules, lang)
+    '''from model list in rules 
+    - generate json_schema
+    - import pydantic_model
+    '''
+    models = {}
+    for model_name in DB.distinct("model"):
+        model_rules = get_rules(model_name)
+        is_multilang_model = any([r["translation"] for r in model_rules])
+        
+        if is_multilang_model:
+            for lang in AVAILABLE_LANG:
+                model_name_title = model_name.title()+ lang.upper()
+                
+                json_schema = create_json_schema(model_name, model_name_title, model_rules, lang)
+                save_json_schema(model_name, json_schema)
+                py_model = create_model(model_name.title(), **json_schema)
+                models[model_name+"_"+lang] = py_model
+                # model_py = create_model(model_name_title, **json_schema)
+                
+                # yield create_json_schema(model_name, model_name_title, model_rules, lang)
 
-    # else:
+    else:
         model_name_title = model_name.title()
-        yield create_json_schema(model_name, model_name_title, model_rules, lang="fr")
+        json_schema = create_json_schema(model_name, model_name_title, model_rules, lang="fr")
+        model_py = create_model(model_name_title, **json_schema)
+        save_json_schema(model_name, json_schema)
+        models[model_name+"_"+lang] = py_model
+        yield(model_name_title, model_py)
 
-def generate_model(input_file, output_file):
-    # generate(input=input_file, input_file_type="jsonschema", field-constraints=True,use-generic-container-types=True, output="./organization.py")
-    cmd = f"datamodel-codegen --input {input_file} --input-file-type jsonschema --field-constraints --enum-field-as-literal=one"
-    python_model = subprocess.check_output(cmd.split(" "))
-    with open(output_file, "wb") as f:
-        f.write(python_model)
-    # with os.listdir(schema_dir):
-    print(python_model)
-#         
+# def write_model_py_file(model_name, json_schema):
+#     '''using datamodel-codegenerator transform json-schema into a pydantic model.py'''
+#     json_file_input = Path(save_json_schema(model_name, json_schema))
+#     model_output = os.path.join(curr_dir,"models", f"{model_name}.py")
+#     open(model_output, 'a').close()
+#     pymodel =generate(
+#             json_schema,
+#             input_file_type="jsonschema", 
+#             field_constraints = True,
+#             enum_field_as_literal="one",
+            
+#     )
+#     print(pymodel)
+#     model: str = pymodel.read_text()
+#     print(model)
+#     return model
+# def generate_model(model_name, json_schema):
+#     '''using datamodel-codegenerator CLI to transform json-schema into a pydantic <model_name>.py'''
+#     json_file_input = save_json_schema(model_name, json_schema)
+#     model_output = os.path.join(curr_dir,"models", f"{model_name}.py")
+#     # pymodel = generate(
+#     #     json_schema,
+#     #     input_file_type="jsonschema", 
+#     #     field_constraints=True, 
+#     #     use_generic_container_types=True, 
+#     #     output=model_output)
+#     # model: str = pymodel.read_text()
+#     # print(model)
+
+#     cmd = f"datamodel-codegen --input={json_file_input} --input-file-type=jsonschema --field-constraints --enum-field-as-literal=one"
+#     try:
+#         python_model = subprocess.check_output(cmd.split(" "),shell=True,stderr=subprocess.STDOUT)
+#         with open(model_output, "wb") as f:
+#             f.write(python_model)
+#         return model_output.read_text()
+#     except subprocess.CalledProcessError as e:
+#         raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
 
 if __name__ == '__main__':
     # import_rules()
     # import_references()
-    for schema in create_json_schemas():
-        input_file = schema
-        model_name = input_file.split("/")[-1].split(".")[0]
-        print(model_name)
-        # output_file = os.path.join("back", "apps", model_name, "_model.py")
-        generate_model(input_file, model_name+".py")
-    # 
-    # generate_model(input_file, output_file)
+    model_name = "organization"
+    model_rules = get_rules(model_name)
+    json_data = create_json_schema(model_name, model_name.title(), model_rules, lang="fr")
+    py_model_file = gen_pydantic_file(model_name)
+    print(py_model_file)
+    # write_model_py_file(model_name, json_data)
+    # generate_model(model_name, json_data)
+    #     # output_file = generate_model(input_file, model_name)
+    #     # print(output_file)
+    #     # output_file = os.path.join("back", "apps", model_name, "_model.py")
+    #     with open(input_file, "r") as f:
+    #         try:
+    #             openapi = convert(json.load(f))
+    #             with open(model_name+"-open-api.json","w") as fo:
+    #                 print(model_name)
+    #                 print(type(openapi))
+    #                 data = json.dumps(openapi)
+    #                 fo.write(data)
+
+    #         except Exception as e:
+    #             print(e, model_name)
+    #     # generate_model(input_file, model_name+".py")
+    # # 
+    # # generate_model(input_file, output_file)

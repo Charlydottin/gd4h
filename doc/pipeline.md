@@ -12,15 +12,15 @@ Option: see Beanie as ODM
 
 ## create_model: from mongodb table to pydantic
 
-create_model building a dict from with rules and example
+1. Create json-schema from example
 
-json schema example see Pydantic Doc Code Generation:
+Option 1: json schema example see Pydantic Doc Code Generation:
 
 
   - [x] add example value in rules.csv => init_db
-  - [ ] add validator using rules => enum not working
+  - [x] add validator using rules => enum OK
   - [x] declare external ref as ref
-
+  - [x] add external_validor and send them to create_model
 ```
 validators = {
     'username_validator':
@@ -31,12 +31,24 @@ UserModel = create_model(
     'UserModel',
     username=(str, ...),
     __validators__=validators
+    __config__ = Config
 )
 ```
 
+BUT: no way to generate from model only import
+
+Option 2: create json-schema with code using rules
+
+
+2. Create pymodel.py
+
+Option 1. use datamodel-code-generator
 alternative in CLI datamodel code generator takes a jsonschema and create model.py
 > https://github.com/koxudaxi/datamodel-code-generator
->
+
+import models into back.apps
+Not working 
+Option2. convert jsonschemas to openapi
 
 ## populate initial data using rules table to control insertion
 

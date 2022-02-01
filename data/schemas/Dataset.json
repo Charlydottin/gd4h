@@ -425,6 +425,8 @@
                 "name": null,
                 "uri": {
                     "type": "string",
+                    "format": "uri",
+                    "pattern": "^https?://",
                     "enum": [
                         ""
                     ]
@@ -465,6 +467,8 @@
                 "name": null,
                 "uri": {
                     "type": "string",
+                    "format": "uri",
+                    "pattern": "^https?://",
                     "enum": [
                         ""
                     ]
@@ -494,6 +498,8 @@
                 "name": null,
                 "uri": {
                     "type": "string",
+                    "format": "uri",
+                    "pattern": "^https?://",
                     "enum": [
                         ""
                     ]
@@ -525,6 +531,8 @@
                 "name": null,
                 "uri": {
                     "type": "string",
+                    "format": "uri",
+                    "pattern": "^https?://",
                     "enum": [
                         ""
                     ]
@@ -544,6 +552,8 @@
                 "name": null,
                 "uri": {
                     "type": "string",
+                    "format": "uri",
+                    "pattern": "^https?://",
                     "enum": [
                         ""
                     ]
@@ -712,6 +722,8 @@
                 "name": null,
                 "uri": {
                     "type": "string",
+                    "format": "uri",
+                    "pattern": "^https?://",
                     "enum": [
                         ""
                     ]
@@ -779,6 +791,8 @@
                 "name": null,
                 "uri": {
                     "type": "string",
+                    "format": "uri",
+                    "pattern": "^https?://",
                     "enum": [
                         "http://publications.europa.eu/resource/authority/data-theme/AGRI",
                         "http://publications.europa.eu/resource/authority/data-theme/ENVI",
@@ -819,6 +833,8 @@
                 "name": null,
                 "uri": {
                     "type": "string",
+                    "format": "uri",
+                    "pattern": "^https?://",
                     "enum": [
                         "",
                         "https://creativecommons.org/publicdomain/zero/1.0/",
@@ -840,6 +856,8 @@
                 "name": null,
                 "uri": {
                     "type": "string",
+                    "format": "uri",
+                    "pattern": "^https?://",
                     "enum": [
                         "http://purl.org/adms/licencetype/Attribution",
                         "http://purl.org/adms/licencetype/GrantBack",
@@ -904,6 +922,8 @@
                 "name": null,
                 "uri": {
                     "type": "string",
+                    "format": "uri",
+                    "pattern": "^https?://",
                     "enum": [
                         ""
                     ]
@@ -959,6 +979,8 @@
                 "name": null,
                 "uri": {
                     "type": "string",
+                    "format": "uri",
+                    "pattern": "^https?://",
                     "enum": [
                         ""
                     ]
@@ -1077,6 +1099,8 @@
                 "name": null,
                 "uri": {
                     "type": "string",
+                    "format": "uri",
+                    "pattern": "^https?://",
                     "enum": [
                         ""
                     ]
@@ -1138,7 +1162,9 @@
                 "id": null,
                 "name": null,
                 "uri": {
-                    "type": "string"
+                    "type": "string",
+                    "format": "uri",
+                    "pattern": "^https?://"
                 },
                 "table_name": null,
                 "name_en": {
@@ -1155,6 +1181,8 @@
                 "name": null,
                 "uri": {
                     "type": "string",
+                    "format": "uri",
+                    "pattern": "^https?://",
                     "enum": [
                         ""
                     ]
@@ -1174,6 +1202,8 @@
                 "name": null,
                 "uri": {
                     "type": "string",
+                    "format": "uri",
+                    "pattern": "^https?://",
                     "enum": [
                         ""
                     ]
@@ -1212,7 +1242,9 @@
                 "id": null,
                 "name": null,
                 "uri": {
-                    "type": "string"
+                    "type": "string",
+                    "format": "uri",
+                    "pattern": "^https?://"
                 },
                 "table_name": null,
                 "name_en": {
