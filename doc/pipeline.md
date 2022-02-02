@@ -8,7 +8,8 @@
 ## CREATE BACK
 
 - generate_models.py
- 
+- [] solve FR EN routers
+- [] solver crud error 
 
 ## POPULATE DB
 

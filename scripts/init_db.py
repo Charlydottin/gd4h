@@ -7,14 +7,7 @@ import json
 from argostranslate import package, translate
 
 from pydantic import create_model 
-# from pydantic import BaseModel, ValidationError, validator
-# from typing import Optional, List
 from itertools import groupby
-import subprocess
-from jsonschema_to_openapi.convert import convert
-# from pathlib import Path
-# from tempfile import TemporaryDirectory
-# from datamodel_code_generator import InputFileType, generate
 curr_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(curr_dir)
 data_dir = os.path.join(parent_dir, "data")
@@ -105,12 +98,14 @@ def import_references():
                     for row in reader:
                         clean_row = {k.strip(): v.strip() for k,v in row.items() if v is not None}
                         # print("translating missing values")
+                        
                         try:
                             if clean_row["name_en"] != "" and clean_row["name_fr"] == "":
                                 clean_row["name_fr"] = translate(clean_row["name_en"], _from="en")
                             if clean_row["name_fr"] != "" and clean_row["name_en"] =="":
                                 clean_row["name_en"] = translate(clean_row["name_fr"], _from="fr")
                         except KeyError:
+                            print(clean_row.keys())
                             pass
                         
                         if "root_uri" in clean_row:
@@ -225,6 +220,14 @@ def get_json_ref_type(rule, ref_rule):
     else:
         return get_json_type(rule)
 
+def create_json_schema_from_example(model):
+    model_name = model.title()
+    example = DB[model+"s"].find_one({"$nin": ["_id", "id"]}, {"_id":0})
+    if example is not None:
+        rule_model = create_model(model_name, **example)
+        with open(os.path.join(data_dir, "schemas", f"{model_name}.json"), "w") as f:
+            f.write(rule_model.schema_json())
+
 def create_rules_json_schema():
     '''create json schema using example loaded into pydantic.create_model'''
     rule_model = create_model("Rules", **DB.rules.find_one({},{"_id":0}))
@@ -235,7 +238,7 @@ def create_rules_json_schema():
 
 def create_reference_json_schema():
     '''create json schema using example loaded into pydantic.create_model'''
-    rule_model = create_model("Reference", **DB.rules.find_one({},{"_id":0}))
+    rule_model = create_model("Reference", **DB.references.find_one({},{"_id":0}))
     rule_json_schema = rule_model.schema_json()
     with open(os.path.join(schema_dir, "references.json"), "w") as f:
         f.write(rule_json_schema)
@@ -365,29 +368,6 @@ def create_json_schemas():
 #         raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
 
 if __name__ == '__main__':
-    # import_rules()
-    # import_references()
-    model_name = "organization"
-    model_rules = get_rules(model_name)
-    json_data = create_json_schema(model_name, model_name.title(), model_rules, lang="fr")
-    py_model_file = gen_pydantic_file(model_name)
-    print(py_model_file)
-    # write_model_py_file(model_name, json_data)
-    # generate_model(model_name, json_data)
-    #     # output_file = generate_model(input_file, model_name)
-    #     # print(output_file)
-    #     # output_file = os.path.join("back", "apps", model_name, "_model.py")
-    #     with open(input_file, "r") as f:
-    #         try:
-    #             openapi = convert(json.load(f))
-    #             with open(model_name+"-open-api.json","w") as fo:
-    #                 print(model_name)
-    #                 print(type(openapi))
-    #                 data = json.dumps(openapi)
-    #                 fo.write(data)
-
-    #         except Exception as e:
-    #             print(e, model_name)
-    #     # generate_model(input_file, model_name+".py")
-    # # 
-    # # generate_model(input_file, output_file)
+    import_rules()
+    import_references()
+    
