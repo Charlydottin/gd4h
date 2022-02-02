@@ -1,5 +1,19 @@
 # Pipeline 
 
+## INIT
+
+- import_rules
+- import_reference
+
+## CREATE BACK
+
+- generate_models.py
+ 
+
+## POPULATE DB
+
+
+## CREATE INDEX
 
 ## init_db: from csv to mongodb table
 
