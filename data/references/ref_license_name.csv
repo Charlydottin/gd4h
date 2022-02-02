@@ -1,4 +1,4 @@
-label_fr,label_en,uri,types,is_open_data,slug
+name_fr,name_en,uri,types,is_open_data,slug
 CC-BY-NC-SA,CC-BY-NC-SA,,cc|by|nc|sa,True,
 CC0,CC0,https://creativecommons.org/publicdomain/zero/1.0/,cc|sa,True,
 Licence Ouverte,Open License,,,True,

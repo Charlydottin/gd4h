@@ -1,4 +1,4 @@
-label_fr,label_en,uri,slug
+name_fr,name_en,uri,slug
 Attribution,Attribution,http://purl.org/adms/licencetype/Attribution,by
 Domaine publique,PublicDomain,http://purl.org/adms/licencetype/PublicDomain,cc
 Effet viral (alias Share-Alike),ViralEffect-ShareAlike,http://purl.org/adms/licencetype/ViralEffect-ShareAlike,sa
