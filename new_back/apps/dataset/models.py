@@ -8,7 +8,7 @@ from datetime import datetime
 
 from apps.reference.models import *
 from apps.comment.models import Comment
-from apps.organization.models import OrganizationFr
+from apps.organization.models import Organization
 
 class Dataset(BaseModel):
     id: Optional[str] = None
@@ -18,7 +18,7 @@ class Dataset(BaseModel):
     last_modification: Optional[datetime] = None
     name: str
     acronym: Optional[str] = None
-    organizations: List[OrganizationFr] = []
+    organizations: List[Organization] = []
     description: str
     url: HttpUrl
     contact_type: List[Contact_TypeEnumFr] = []
@@ -65,7 +65,7 @@ class Dataset(BaseModel):
     geographical_information_level: List[Geographical_Geospatial_Information_LevelEnumFr] = []
     projection_system: List[Projection_SystemEnumFr] = []
     related_geographical_information: Optional[bool] = None
-    geographical_geospatial_coverage: List[]] = []
+    geographical_geospatial_coverage: List[str] = []
     geospatial_comments: List[Comment] = []
     comments: List[Comment] = []
     qualification_comments: List[Comment] = []

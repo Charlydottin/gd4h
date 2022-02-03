@@ -50,7 +50,7 @@ class OrganizationEn(BaseModel):
 
 
 
-OrganizationFr.update_forward_refs()
+Organization.update_forward_refs()
 
 OrganizationEn.update_forward_refs()
 
