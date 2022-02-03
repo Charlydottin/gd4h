@@ -12,10 +12,17 @@ from datetime import datetime
 {% elif model_name=="import_reference" %}
 {%for model,value in value_list %}from apps.{{model}}.models import {{value}}
 {%endfor%}
-{%else%}
-
+{% elif model_name!="update_model" %}
 class {{model_name}}(BaseModel):
     {%for value in value_list %}{{value}}
     {%endfor%}
-{%endif%}
+{%else%}
+{%for model in value_list %}
+{{model}}.update_forward_refs()
 {%endfor%}
+
+{%endif%}
+
+{%endfor%}
+
+

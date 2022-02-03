@@ -73,13 +73,7 @@ def list_model_names():
     '''get list of model_names'''
     models = []
     for model_name in DB["rules"].distinct("model"):
-        if model_name != "reference":
-            is_multilang_model = any([r["translation"] for r in DB["rules"].find({"model":model_name}, {"translation": 1, "_id":0})])
-            if is_multilang_model:
-                for lang in AVAILABLE_LANG:
-                    models.append((model_name, model_name.title()+lang.title()))
-            else:
-                models.append((model_name, model_name.title()))
+        models.extend(get_model_names(model_name))
     return models
 
 def list_ref_names():
@@ -94,12 +88,6 @@ def get_import(model_name):
     imports = list(set([r["external_model"] for r in get_rules(model_name)]))
     return(model_name, imports)
 
-def solve_circular_import():
-    circular_import = []
-    for model in DB.rules.distinct("model"):
-        model, imports = get_import(model)
-        print(model)
-        print(imports)
 
 def generate_references_model(output_file):
     template = env.get_template('references_model.tpl')
@@ -124,22 +112,38 @@ def get_pydantic_datatype(datatype):
     if datatype == 'object':
         return 'dict'
 
+
 def get_model_names(model_name):
     models = []
     is_multilang_model = any([r["translation"] for r in DB["rules"].find({"model":model_name}, {"translation": 1, "_id":0})])
     if is_multilang_model:
         for lang in AVAILABLE_LANG:
-            models.append((model_name, model_name.title()+lang.title()))
+            models.append((model_name, lang, model_name.title()+lang.title()))
     else:
-        models.append((model_name, model_name.title()))
+        models.append((model_name, "", model_name.title()))
     return models
-
+def get_rule_model():
+    example = DB.rules.find_one()
+    model = ["rule", []]
+    for key, value in example.items():
+        if key == "_id":
+            line = f"{key}: str"
+        if key == "external_model_displaykeys":
+            line = f"{key}: List[str] = []"
+        else:
+            py_type = type(value).__name__
+            
+            line = f"{key}: {py_type} = None"
+        model[1].append(line)
+    print(model)
+    return [model]
+        
 def get_model(model):
     model_info = []
     external_refs = []
     external_models = [] 
     info = {}
-    model_rules = list([n for n in DB["rules"].find({"model": model}, {"_id":0}) if n["slug"]!= "_id" and n["slug"]!= "id"])
+    model_rules = list(DB["rules"].find({"model": model}, {"_id":0}))
     is_multilang_model = any([r["translation"] for r in model_rules])
     if is_multilang_model:
         for lang in AVAILABLE_LANG:
@@ -267,16 +271,27 @@ def get_model(model):
                 else:
                     line = f"{field_name}: {py_type}"
             info[model_name].append(line)
-    external_models = [n for n in external_models if n[0]!= model and n[0]!= "reference"]
+    external_models = set([n for n in external_models if n[0]!= model and n[0]!= "reference"])
+    
+    model_info.append(("import_model", list(external_models)))
     model_info.append(("import_reference", list(set(external_refs))))
     model_info.extend(list(info.items()))
-    model_info.append(("import_model", list(set(external_models))))
+    
+    if len(external_models) > 0:
+        model_info.append(("update_model", info.keys()))
     return model_info
 
 def generate_model(model_name, output_file):
     template = env.get_template('model.tpl')
     with open(output_file, "w") as f:
+        
         py_file = template.render(models=get_model(model_name), langs = AVAILABLE_LANG)
+        f.write(py_file)
+
+def generate_rule_model(output_file):
+    template = env.get_template('model.tpl')
+    with open(output_file, "w") as f:
+        py_file = template.render(models=get_rule_model(), langs = AVAILABLE_LANG)
         f.write(py_file)
 
 def generate_main(output_file):
@@ -289,23 +304,28 @@ def generate_main(output_file):
 def generate_router(model, output_file):
     template = env.get_template('routers.tpl')
     with open(output_file, "w") as f:
-        py_file = template.render(route_models=get_model_names(model), langs = AVAILABLE_LANG)
+        py_file = template.render(route_models=get_model_names(model))
         f.write(py_file)
-    pass
+    
+def generate_rule_router(model, output_file):
+    template = env.get_template('routers.tpl')
+    with open(output_file, "w") as f:
+        py_file = template.render(route_models=[["rule", "", "Rule"]])
+        f.write(py_file)
+    
 
 def generate_app():
+
     back_dir = os.path.join(parent_dir, "test_back")
     apps_dir = os.path.join(back_dir, "apps")
+    
     if not os.path.exists(back_dir):
         os.makedirs(back_dir)
     if not os.path.exists(apps_dir):
         os.makedirs(apps_dir)
-    
-    main_file = os.path.join(back_dir, "main.py")
-    generate_main(main_file)
-    init_file = os.path.join(back_dir, "__init__.py")
-    Path(init_file).touch()
+    print("Creating app")
     for model in DB.rules.distinct("model"):    
+        print(f"creating {model}")
         if model == "reference":
             model_dir = os.path.join(apps_dir, model)
             if not os.path.exists(model_dir):
@@ -316,6 +336,7 @@ def generate_app():
             generate_router(model, router_file)
             init_file = os.path.join(model_dir, "__init__.py")
             Path(init_file).touch()
+            continue
         else:
             model_dir = os.path.join(apps_dir, model)
             if not os.path.exists(model_dir):
@@ -326,7 +347,24 @@ def generate_app():
             generate_router(model, router_file)
             init_file = os.path.join(model_dir, "__init__.py")
             Path(init_file).touch()
-
+            continue
+    model = "rule"
+    model_dir = os.path.join(apps_dir, model)
+    if not os.path.exists(model_dir):
+        os.makedirs(model_dir)
+    output_file = os.path.join(model_dir, "models.py")
+    generate_rule_model(output_file)
+    router_file = os.path.join(model_dir, "routers.py")
+    generate_rule_router(model, router_file)
+    init_file = os.path.join(model_dir, "__init__.py")
+    Path(init_file).touch()
+    
+    main_file = os.path.join(back_dir, "main.py")
+    generate_main(main_file)
+    print("Writing main")
+    init_file = os.path.join(back_dir, "__init__.py")
+    Path(init_file).touch()
+    print(f"sucessfully generated app in {apps_dir}")
 if __name__ == "__main__":
     generate_app()
     

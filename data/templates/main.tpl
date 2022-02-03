@@ -9,9 +9,17 @@ from bson.objectid import ObjectId
 from motor.motor_asyncio import AsyncIOMotorClient
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import RedirectResponse
-{% for route, models in route_models%}
+
+
+{% for route,lang,models in route_models%}
+
+{%if lang in ["fr", "en"] %}
+from apps.{{route}}.routers import {{lang}}_router as {{lang}}_{{route}}_router
+# from apps.{{route}}.models import {{models}}
+{%else %}
 from apps.{{route}}.routers import router as {{route}}_router
-from apps.{{route}}.models import {{models}}
+# from apps.{{route}}.models import {{models}}
+{% endif%}
 {%endfor%}
 app = FastAPI()
 
@@ -41,8 +49,12 @@ async def shutdown_db_client():
 #     """Initialize application services"""
 #     app.db = AsyncIOMotorClient("mongodb://localhost:27017").account
 #     await init_beanie(app.db, document_models=[UserModel, DatasetModel])
-{% for route,model in route_models%}
+{% for route, lang, model in route_models%}
+{%if lang in ["fr", "en"] %}
+app.include_router({{lang}}_{{route}}_router, tags=["{{route}}s"], prefix="/{{lang}}/{{route}}s")
+{%else%}
 app.include_router({{route}}_router, tags=["{{route}}s"], prefix="/{{route}}s")
+{%endif%}
 {% endfor %}
 
 

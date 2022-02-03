@@ -1,3 +1,66 @@
+#!/usr/bin/.venv/python3.8
+
+import os
+from pymongo import MongoClient
+from csv import DictReader, DictWriter
+import json
+from argostranslate import package, translate
+import datetime
+import bleach
+
+DATABASE_NAME = "GD4H_V2"
+mongodb_client = MongoClient("mongodb://localhost:27017")
+DB = mongodb_client[DATABASE_NAME]
+
+AVAILABLE_LANG = ["fr","en"]
+SWITCH_LANGS = dict(zip(AVAILABLE_LANG,AVAILABLE_LANG[::-1]))
+
+installed_languages = translate.get_installed_languages()
+fr_en = installed_languages[1].get_translation(installed_languages[0])
+en_fr = installed_languages[0].get_translation(installed_languages[1])
+
+
+
+curr_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(curr_dir)
+data_dir = os.path.join(parent_dir, "data")
+meta_dir = os.path.join(data_dir, "meta")
+schema_dir = os.path.join(data_dir, "schemas")
+dataset_dir = os.path.join(data_dir, "dataset")
+organization_dir = os.path.join(data_dir, "organization")
+model_dir = os.path.join(os.path.dirname(parent_dir), "back", "models")
+
+def translate(text, _from="fr"):
+    if _from == "fr":
+        return fr_en.translate(text)
+    else:
+        return en_fr.translate(text)
+
+
+def get_not_translated_fields(model="organization"):
+    '''get all fields for given model that are not multilingual'''
+    fields = DB.rules.find({"model": model, "translation": False}, {"slug":1})
+    return [f["slug"] for f in fields]
+
+def get_translated_fields(model="organization"):
+    '''get all fields for given model that are multilingual'''
+    fields = DB.rules.find({"model": model, "translation": True}, {"slug":1})
+    return [f["slug"] for f in fields]
+
+def get_mandatory_fields(model="organization"):
+    fields = DB.rules.find({"model": model, "mandatory": True}, {"slug":1})
+    return [f["slug"] for f in fields]
+
+def get_rule(model, field_slug):
+    '''get rule for given model and given field'''
+    rule = DB.rules.find_one({"model": model, "slug": field_slug})
+    return rule
+
+def get_rules(model):
+    '''get rule for given model and given field'''
+    return list(DB.rules.find({"model": model},{"_id":0}))
+
+
 
 def import_organizations():
     '''import_organizations
@@ -26,105 +89,77 @@ def import_organizations():
                     value = None
                 org["en"][translated_field] = value
             db_org = DB.organizations.insert_one(org)
-            create_logs("admin","create", "organization", True, "OK", scope=None, ref_id=db_org.inserted_id)
+            # create_logs("admin","create", "organization", True, "OK", scope=None, ref_id=db_org.inserted_id)
     print(DB.organizations.count_documents({}), "organization inserted")
 
+
+def cast_value(datatype, value):
+    '''transform rules datatype into pydantic datatype'''
+    if datatype == "string":
+        return str(value)
+    if datatype == "id":
+        return str(value)
+    if datatype =="boolean":
+        if value is None:
+            return None
+        return bool(value)
+    if datatype == 'date':
+        if value is None:
+            return ""
+        return str(value)
+    if datatype == "url":
+        return str(value)
+    if datatype == "email":
+        return str(value)
+    if datatype == 'object':
+        return create_comment("admin", value)
+        # return {"text":str(value), "user":{}}
+
+def cast_type_given_rule(model, field, value):
+    if field == "organizations":
+        orgs = []
+        for org in value.split("|"):
+            o = DB.organizations.find_one({"fr.name": org})
+            orgs.append(o)
+        return orgs
+    if "comments" in field:
+        return [create_comment("admin", value)]
+    rule = get_rule(model, field)
+    if rule is None:
+        if value in ["true", "false"]:
+            return bool(value)
+        return value
+    if rule["multiple"]:
+        return [cast_value(rule["datatype"], v) for v in value.split("|")]
+    else:
+        return cast_value(rule["datatype"], value)
 
 
 def import_datasets():
     print("Create Datasets")
     created_datasets = []
-    datasets_doc = os.path.abspath(os.path.join(data_dir, "datasets", "census_datasets_fr.csv"))
+    datasets_doc = os.path.abspath(os.path.join(data_dir, "datasets", "datasets_fr.csv"))
     with open(datasets_doc, "r") as f:
         reader = DictReader(f, delimiter=",")
         for row in reader:
-            dataset = {}
-            #COMMON
-            dataset["name"] = row["dataset_name"]
-            dataset["acronym"] = row["acronym"]
-            dataset["description"] = {"label_fr":row["description"], "label_en": None}
-            dataset["organizations"] = [{"name":n.strip()} for n in row["organization"].split("|")]
-            dataset["url"] = row["link"]
-            #CONTACT
-            dataset["contact"] = [row["contact"]]
-            dataset["contact_type"] = [{"label_fr": "email", "label_en": "email"}]
-            dataset["contact_comments"] = [create_comment("admin", text=row["contact"])]
-            # SANTE-ENVIRONNEMENT
-            dataset["data_domain"] = {"label_fr": row["data_domain"], "label_en": None}
-            dataset["theme_category"] = {"label_fr":row["theme_category"], "label_en": None}
-            dataset["thematic_field"] = {"label_fr":row["thematic_field"], "label_en": None} 
-            dataset["nature"] = {"label_fr":row["nature"], "label_en": None}
-            dataset["environment"] = [{"label_fr":n.strip(), "label_en": translate(n.strip())} for n in row["environment"].split("/")]
-            dataset["subthematic"] = [{"label_fr":n.strip(), "label_en": translate(n.strip())} for n in row["subthematic"].split("/")]
-            dataset["exposure_factor_category"] = [{"label_fr":n.strip(), "label_en": translate(n.strip())} for n in row["exposure_factor_category"].split("/")]
-            # this a simple copy for NOW
-            dataset["exposure_factor"] = dataset["exposure_factor_category"]
-            # TECH
-            dataset["has_filter"] = bool(row["filter"])
-            dataset["has_search_engine"] = bool(row["search_engine"])
-            dataset["has_missing_data"] = bool(row['missing_data']!= "" and row['missing_data'] is not None and row["missing_data"] != "None")
-            if dataset["has_missing_data"]: 
-                dataset["missing_data_comments"] = [create_comment("admin", text=row["missing_data"])]
-            dataset["has_documentation"] = bool(row['documentation']!= "" and row['documentation'] is not None and row["documentation"] != "None")
-            if dataset["has_documentation"]: 
-                dataset["documentation_comments"] = [create_comment("admin", text=row["documentation"])]
-            
-            dataset["is_downloadable"] = bool(row["downloadable"])
-            dataset["broadcast_mode"] = [ {"label_fr":n.strip(), "label_en":None} for n in row["broadcast_mode"].split("/") ]
-            dataset["files_format"] = [n.strip().title() for n in row["format"].split("/")]
-            dataset["tech_comments"] = []
-            # dataset["tech_comments"] = [create_comment("c24b", text="Commentaire sur l'accès technique")]
-            #LEGAL
-            dataset["license_name"] = {"label_fr":row["license_name"], "label_en": None}
-            dataset["license_type"] = [{"label_fr":n, "label_en": n} for n in row["license_type"].split("/")]
-            dataset["has_pricing"] = bool(row['pricing']!= "Gratuit")
-            if row['pricing']!= "Gratuit":
-
-                dataset["legal_comments"] = [
-                    create_comment("c24b", text=row["pricing"])]
-            else:
-                dataset["legal_comments"] = []
-            dataset["has_restriction"] = bool(row['restrictions']!= "")
-            if dataset["has_restriction"]: 
-                dataset["restrictions_comments"] = [create_comment("admin", text=row["restrictions"])]
-            dataset["has_compliance"] = bool(row['compliance']!= "")
-            if dataset["has_compliance"]: 
-                dataset["compliance_comments"] = [create_comment("admin", text=row["compliance"])]
-            #GEO
-            dataset["is_geospatial_data"] = bool(row["geospatial_data"])
-            if dataset["is_geospatial_data"]:
-                dataset["administrative_territory_coverage"] = [n.strip() for n in row["administrative_territory_coverage"].split(",")]
-                dataset["geospatial_geographical_coverage"] = row["geographical_geospatial_coverage"].split("+")
-                dataset["geographical_information_level"] = [{"label_fr":v.strip(), "label_en":translate(v.strip())} for v in row["geographical_information_level"].split("/")]
-                dataset["projection_system"] = [n.strip() for n in row["projection_system"].split("/")]
-                dataset["related_geographical_information"] = bool(row["related_geographical_information"] == "")
-            if row["related_geographical_information"] != "":
-                dataset["geo_comments"] = [create_comment("c24b", text=row["related_geographical_information"])]
-            else:
-                dataset["geo_comments"] = []
-            #TIME
-            dataset["year"] = [n.strip() for n in row["year"].split("-")]
-            dataset["temporal_scale"] = [v.strip() for v in row["temporal_scale"].split("/")]
-            dataset["update_frequency"] = {"label_fr":row["update_frequency"], "label_en": translate(row["update_frequency"])}
-            if row["automatic_update"] == "false":
-                dataset["automatic_update"] = False
-            if row["automatic_update"] == "true":
-                dataset["automatic_update"] = False
-            if row["automatic_update"] == "":
-                dataset["automatic_update"] = None
-            # ADMIN
-            dataset["last_updated"] = row["last_updated"]
-            dataset["last_inserted"]= row["last_inserted"]
-            dataset["last_modification"] = row["last_modification"]
-            dataset["related_referentials"] = [v.strip() for v in row["related_referentials"].split("|")]
-            dataset["other_access_points"] = [v.strip() for v in row["other_access_points"].split("|")]
-            # dataset["context_comments"] = [create_comment("admin", text="Commentaire sur le contexte de production du dataset")]
-            dataset["context_comments"] = []
-            dataset["comments"] = [create_comment("admin", text=row["comment"])]
-            ds = DB.datasets.insert_one(dataset)
-            created_datasets.append(ds.inserted_id)
-    for id in created_datasets:
-        DB.logs.insert_one(create_logs("admin", "create", "dataset", True, "OK", scope=None, ref_id=id))
+            dataset = {"fr": {},"en": {}}
+            dataset["fr"] = {k:cast_type_given_rule("dataset",k,v) for k,v in row.items()}
+            dataset["en"] = {k:cast_type_given_rule("dataset",k,v) for k,v in row.items() if get_not_translated_fields("dataset")} 
+            for translated_field in  get_translated_fields("dataset"):
+                rule = get_rule("dataset", translated_field)
+                try:
+                    value = row[translated_field] 
+                    if rule["is_controled"]:
+                        accepted_ref = DB[rule["reference_table"]].find_one({"label_fr": value}, {"label_en":1})
+                        try:
+                            value = accepted_ref["label_en"]
+                        except: 
+                            value = accepted_ref
+                except KeyError:
+                    value = None
+                dataset["en"][translated_field] = value
+            DB.datasets.insert_one(dataset)
+        print(DB.datasets.count_documents(), "datasets")
 
 def link_organizations_to_datasets():
     not_found_orgs = []
@@ -310,7 +345,9 @@ def init_data():
     DB.organizations.drop()
     import_organizations()
     DB.datasets.drop()
-    import_dataset()
-    link_dataset2organizations()
-    register_comments()
+    import_datasets()
+    # link_organizations_to_datasets()
+    # register_comments()
 
+if __name__=="__main__":
+    init_data()
