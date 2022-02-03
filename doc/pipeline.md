@@ -2,21 +2,33 @@
 
 ## INIT
 
+from rules.csv populate DB
 - import_rules
 - import_reference
 
-## CREATE BACK
+## CREATE FASTAPI
 
-- generate_models.py
-- [x] solve FR EN routers
-- [x] solve crud error 
+generate_api:
+- generate_models
 
-- connect db to back
+from rules create model with Jinja2 templating
+
+- generate_routers
+
+https://fastapi-crudrouter.awtkns.com/
+
+
+- connect db to endpoints
 
 ## POPULATE DB
 
+import organizations_fr
+import datasets_fr
 
 ## CREATE INDEX
+
+- use rules to create index
+- use rules to create filters
 
 ## init_db: from csv to mongodb table
 
@@ -73,7 +85,6 @@ Option2. convert jsonschemas to openapi
 ## Create API CRUD endpoint from Models
 
 
-https://fastapi-crudrouter.awtkns.com/
 
 
 ## Create index
