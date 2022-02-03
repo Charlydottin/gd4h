@@ -75,7 +75,6 @@ date,log,logs.date,Date,Date ,ADMIN,,,False,,,False,False,date,date,False,True,5
 id,user,users.id,id,id,ADMIN,,,False,,,False,False,unique,id,False,False,1,-1,-1,-1,False,False,False,,,,
 name,user,users.name,Nom,Name,ADMIN,,,False,,,False,False,unique,string,False,False,2,-1,1,-1,True,False,False,,,,
 email,user,users.email,Email,Email,ADMIN,,,False,,,False,False,unique,string,False,False,3,-1,2,-1,True,False,False,,,,
-organization,user,users.organization,Organisme,Organization,ADMIN,organization,name,False,,,False,True,enum,object,False,False,4,-1,3,-1,False,True,False,,,,
 role,user,users.role,Role,Role,ADMIN,role,type|action|perimeter,False,,,True,True,enum,object,False,False,5,-1,4,-1,True,True,False,Role attribué : Administrateur/Programmer/Editeur/Reviewer/Public,,,
 id,reference,references.id,id,id,ADMIN,,,False,,,False,False,unique,id,False,False,1,-1,-1,-1,False,False,False,,,,
 name,reference,references.name,Nom de la référence,Reference Name,ADMIN,,,False,,,False,False,unique,string,False,False,2,1,1,-1,True,True,False,,,,
