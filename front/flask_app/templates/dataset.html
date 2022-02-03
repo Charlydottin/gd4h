@@ -16,7 +16,7 @@
 {%else%}
 <div class="fr-callout">
   <p class="fr-callout__title">
-    <a href="#" class="fr-card__link">{{dataset["name"]}}</a>
+    <a href="/datasets/{{dataset['id']}}" class="fr-card__link">{{dataset["name"]}}</a>
     {% if dataset["acronym"] != "" %}
     - {{dataset["acronym"]}}
    {% endif %}
