@@ -9,11 +9,6 @@ from datetime import datetime
 
 from apps.user.models import UserFr
 from apps.user.models import UserEn
-
-
-
-
-
 from apps.reference.models import Agent_TypeEnumEn
 from apps.reference.models import Organization_TypeEnumFr
 from apps.reference.models import Agent_TypeEnumFr
@@ -29,10 +24,6 @@ class Organization(BaseModel):
     url: HttpUrl
     description: Optional[str] = None
     members: List[UserFr] = []
-    
-
-
-
 
 class OrganizationEn(BaseModel):
     _id: Optional[str] = None
