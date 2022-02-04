@@ -159,7 +159,7 @@ def import_datasets():
                     value = None
                 dataset["en"][translated_field] = value
             DB.datasets.insert_one(dataset)
-        print(DB.datasets.count_documents(), "datasets")
+    print(DB.datasets.count_documents({}), "datasets")
 
 def link_organizations_to_datasets():
     not_found_orgs = []
