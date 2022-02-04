@@ -16,28 +16,57 @@ from apps.reference.models import Organization_TypeEnumEn
 
 class Organization(BaseModel):
     _id: Optional[str] = None
-    organization_type: List[Organization_TypeEnumFr]
+    organization_type: Organization_TypeEnumFr = Organization_TypeEnumFr.option_1
     acronym: Optional[str] = None
-    agent_type: List[Agent_TypeEnumFr]
+    agent_type: Agent_TypeEnumFr = Agent_TypeEnumFr.option_1
     image_url: Optional[HttpUrl] = None
     name: str
-    url: HttpUrl
+    url: Optional[HttpUrl]
     description: Optional[str] = None
-    members: List[UserFr] = []
+    members: Optional[List[UserFr]] = []
 
 class OrganizationEn(BaseModel):
     _id: Optional[str] = None
-    organization_type: List[Organization_TypeEnumEn]
+    organization_type: Organization_TypeEnumEn = Organization_TypeEnumEn.option_1
     acronym: Optional[str] = None
-    agent_type: List[Agent_TypeEnumEn]
+    agent_type: Agent_TypeEnumEn = Agent_TypeEnumEn.option_1
     image_url: Optional[HttpUrl] = None
     name: str
-    url: HttpUrl
+    url: Optional[HttpUrl]
     description: Optional[str] = None
-    members: List[UserEn] = []
+    members: Optional[List[UserEn]] = []
+    
+class UpdateOrganizationFr(BaseModel):
+    organization_type: Optional[Organization_TypeEnumFr] = None
+    agent_type: Optional[Agent_TypeEnumFr] = None
+    name: Optional[str] = None
+    acronym: Optional[str] = None
+    image_url: Optional[HttpUrl] = None
+    name: Optional[str]
+    url: Optional[HttpUrl]
+    description: Optional[str] = None
+
+class UpdateOrganizationEn(BaseModel):
+    organization_type: Optional[Organization_TypeEnumEn] = None
+    agent_type: Optional[Agent_TypeEnumEn] = None
+    name: Optional[str] = None
+    acronym: Optional[str] = None
+    image_url: Optional[HttpUrl] = None
+    name: Optional[str]
+    url: Optional[HttpUrl]
+    description: Optional[str] = None
+
+class FilterOrganizationFr(BaseModel):
+    organization_type: Optional[Organization_TypeEnumFr] = None
+    agent_type: Optional[Agent_TypeEnumFr] = None
+    name: Optional[str] = None
     
 
-
+class FilterOrganizationEn(BaseModel):
+    organization_type: Optional[Organization_TypeEnumEn] = None
+    agent_type: Optional[Agent_TypeEnumEn] = None
+    name: Optional[str] = None
+    
 
 
 
