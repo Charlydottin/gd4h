@@ -138,23 +138,82 @@ def get_rule_model():
             line = f"{key}: {py_type} = None"
         model[1].append(line)
     return [model]
-        
-def get_model(model):
+
+def get_filter_model(model_name="dataset"):
     model_info = []
     external_refs = []
     external_models = [] 
     info = {}
-    model_rules = list(DB["rules"].find({"model": model}, {"_id":0}))
+    model_rules = list(DB["rules"].find({"model": model_name, "is_facet":True}, {"_id":0}))
+    for lang in AVAILABLE_LANG:
+        model_title = "Filter"+model_name.title()+lang.title()
+        info[model_title] = []
+        for rule in model_rules:
+            field_name = rule["slug"]
+            py_type = get_pydantic_datatype(rule['datatype'])
+            if rule["multiple"]:
+                if rule["reference_table"] != "":
+                    py_type = rule["reference_table"].replace("ref_", "").title()+"Enum"+lang.title()
+                    external_refs.append(("reference", py_type))
+                    line = f"{field_name}: List[{py_type}] = [{py_type}.option_1]"
+                elif rule["external_model"] != "":
+                    external_model_rules = list(DB.rules.find({"model": rule["external_model"]}, {"_id":0, "translation":1}))
+                    is_multilang_ext_model = any([r["translation"] for r in external_model_rules])
+                    if is_multilang_ext_model:
+                        py_type = rule["external_model"].title()+lang.title()
+                        external_models.append((rule["external_model"], py_type))
+                        line = f"{field_name}: List[{py_type}] = []"
+                    else:
+                        py_type = rule["external_model"].title()
+                        external_models.append((rule["external_model"], py_type))
+                        line = f"{field_name}: List[{py_type}] = []"
+                else:
+                    line = f"{field_name}: List[{py_type}] = []"
+            else:
+                if rule["reference_table"] != "":
+                    py_type = rule["reference_table"].replace("ref_", "").title()+"Enum"+lang.title()
+                    external_refs.append(("reference", py_type))
+                    line = f"{field_name}: List[{py_type}] = [{py_type}.option_1]"   
+                elif rule["external_model"] != "":
+                    external_model_rules = [DB.rules.find({"model": rule["external_model"]})]
+                    is_multilang_ext_model = any([r["translation"] for r in external_model_rules])
+                    if is_multilang_ext_model:
+                        py_type = rule["external_model"].title()+lang.title()
+                        external_models.append((rule["external_model"], py_type))
+                        line = f"{field_name}: {py_type} = None"
+                    else:
+                        py_type = rule["external_model"].title()
+                        external_models.append((rule["external_model"], py_type))
+                        line = f"{field_name}: {py_type} = None"
+                else:
+                    line = f"{field_name}: Optional[{py_type}] = None"
+            info[model_title].append(line)
+    
+    external_models = set([n for n in external_models])
+    model_info.append(("import_model", list(external_models)))
+    model_info.append(("import_reference", list(set(external_refs))))
+    model_info.extend(list(info.items()))
+    if len(external_models) > 0:
+        model_info.append(("update_model", info.keys()))
+    return model_info
+
+def get_model(model_name="dataset"):
+    model_info = []
+    external_refs = []
+    external_models = [] 
+    info = {}
+    model_rules = list(DB["rules"].find({"model": model_name}, {"_id":0}))
     is_multilang_model = any([r["translation"] for r in model_rules])
     if is_multilang_model:
         for lang in AVAILABLE_LANG:
-            model_name = model.title()+lang.title()
-            info[model_name] = []
+            model_title = model_name.title()+lang.title()
+            info[model_title] = []
             for rule in model_rules:
                 field_name = rule["slug"]
                 py_type = get_pydantic_datatype(rule['datatype'])
                 if rule["multiple"]:
                     if py_type == "dict":
+
                         if rule["reference_table"] != "":
                             if rule["is_controled"]:
                                 py_type = rule["reference_table"].replace("ref_", "").title()+"Enum"+lang.title()
@@ -231,10 +290,10 @@ def get_model(model):
                             line = f"{field_name}: Optional[{py_type}] = None"
                         else:
                             line = f"{field_name}: {py_type}"
-                info[model_name].append(line)
+                info[model_title].append(line)
     else:
-        model_name = model.title()
-        info[model_name] = []
+        model_title = model_name.title()
+        info[model_title] = []
         for rule in model_rules:
             field_name = rule["slug"]
             py_type = get_pydantic_datatype(rule['datatype'])
@@ -271,9 +330,8 @@ def get_model(model):
                     line = f"{field_name}: Optional[{py_type}] = None"
                 else:
                     line = f"{field_name}: {py_type}"
-            info[model_name].append(line)
-    external_models = set([n for n in external_models if n[0]!= model and n[0]!= "reference"])
-    
+            info[model_title].append(line)
+    external_models = set([n for n in external_models if n[0]!= model_name and n[0]!= "reference"])
     model_info.append(("import_model", list(external_models)))
     model_info.append(("import_reference", list(set(external_refs))))
     model_info.extend(list(info.items()))
@@ -281,39 +339,24 @@ def get_model(model):
     if len(external_models) > 0:
         model_info.append(("update_model", info.keys()))
     return model_info
-
-def generate_model(model_name, output_file):
+    
+def generate_model(models, output_file):
     template = env.get_template('model.tpl')
     with open(output_file, "w") as f:
-        
-        py_file = template.render(models=get_model(model_name), langs = AVAILABLE_LANG)
-        f.write(py_file)
-
-def generate_rule_model(output_file):
-    template = env.get_template('model.tpl')
-    with open(output_file, "w") as f:
-        py_file = template.render(models=get_rule_model(), langs = AVAILABLE_LANG)
+        py_file = template.render(models=models, langs = AVAILABLE_LANG)
         f.write(py_file)
 
 def generate_main(output_file):
     template = env.get_template('main.tpl')
-    with open(output_file, "w") as f:
-        
+    with open(output_file, "w") as f:        
         py_file = template.render(route_models=list_model_names(), langs = AVAILABLE_LANG)
         f.write(py_file)
 
-def generate_router(model, output_file):
+def generate_router(route_models, output_file):
     template = env.get_template('routers.tpl')
     with open(output_file, "w") as f:
-        py_file = template.render(route_models=get_model_names(model))
+        py_file = template.render(route_models=route_models)
         f.write(py_file)
-    
-def generate_rule_router(model, output_file):
-    template = env.get_template('routers.tpl')
-    with open(output_file, "w") as f:
-        py_file = template.render(route_models=[["rule", "", "Rule"]])
-        f.write(py_file)
-    
 
 def generate_app(back_name="test_back"):
     back_dir = os.path.join(parent_dir, back_name)
@@ -323,47 +366,69 @@ def generate_app(back_name="test_back"):
     if not os.path.exists(apps_dir):
         os.makedirs(apps_dir)
     print("Creating app")
-    for model in DB.rules.distinct("model"):    
-        print(f"creating {model}")
-        if model == "reference":
-            model_dir = os.path.join(apps_dir, model)
-            if not os.path.exists(model_dir):
-                os.makedirs(model_dir)
-            model_file = os.path.join(model_dir, "models.py")
+    model_list = DB.rules.distinct("model")+["rule"]
+    for model_name in model_list:    
+        print(f"creating {model_name}")
+        model_dir = os.path.join(apps_dir, model_name)
+        if not os.path.exists(model_dir):
+            os.makedirs(model_dir)
+        model_file = os.path.join(model_dir, "models.py")
+        if model_name == "reference":
             generate_references_model(model_file)
-            router_file = os.path.join(model_dir, "routers.py")
-            generate_router(model, router_file)
-            init_file = os.path.join(model_dir, "__init__.py")
-            Path(init_file).touch()
-            continue
+        elif model_name == "rule":
+            models = get_rule_model()
+            generate_model(models, model_file)
         else:
-            model_dir = os.path.join(apps_dir, model)
-            if not os.path.exists(model_dir):
-                os.makedirs(model_dir)
-            output_file = os.path.join(model_dir, "models.py")
-            generate_model(model, output_file)
-            router_file = os.path.join(model_dir, "routers.py")
-            generate_router(model, router_file)
-            init_file = os.path.join(model_dir, "__init__.py")
-            Path(init_file).touch()
-            continue
-    model = "rule"
-    model_dir = os.path.join(apps_dir, model)
-    if not os.path.exists(model_dir):
-        os.makedirs(model_dir)
-    output_file = os.path.join(model_dir, "models.py")
-    generate_rule_model(output_file)
-    router_file = os.path.join(model_dir, "routers.py")
-    generate_rule_router(model, router_file)
-    init_file = os.path.join(model_dir, "__init__.py")
-    Path(init_file).touch()
-    
+            models = get_model(model_name)
+            generate_model(models, model_file)
+
+        router_file = os.path.join(model_dir, "routers.py")
+        if model_name == "rule":
+            route_models = [('Rule', '', 'rule')]
+        else:
+            route_models= get_model_names(model_name)
+        print(route_models)
+        generate_router(route_models, router_file)
+        init_file = os.path.join(model_dir, "__init__.py")
+        Path(init_file).touch()
+        continue
     main_file = os.path.join(back_dir, "main.py")
     generate_main(main_file)
     print("Writing main")
     init_file = os.path.join(back_dir, "__init__.py")
     Path(init_file).touch()
-    print(f"sucessfully generated app in {apps_dir}")
+    print(f"sucessfully generated app in {back_dir}")
+    print(f"Run\ncd {back_dir}\nuvicorn main:app --reload")
+
+def get_indexed_fields():
+    return [n["slug"] for n in get_rules("dataset") if n["is_indexed"]]
+
+def get_filter_fields():
+    return [n["slug"] for n in get_rules("dataset") if n["is_facet"]]
+
+def get_filters():
+    facet_rules = [n for n in get_rules("dataset") if n["is_facet"]]
+    filters = []
+    for facet in facet_rules:
+        field_name = facet["slug"]  
+        is_controled, is_multiple, is_bool = facet["is_controled"], facet["multiple"], facet["datatype"] == "boolean"
+        filter_d = {
+            "name": field_name, 
+            "is_controled":is_controled, 
+            "is_multiple":is_multiple, 
+            "is_bool": is_bool,
+            "values_fr":[],
+            "values_en":[],
+        }
+        if is_controled:
+            filter_d["values_en"] = DB[facet["reference_table"]].distinct("name_en")
+            filter_d["values_fr"] = DB[facet["reference_table"]].distinct("name_fr")
+        elif is_bool:
+            filter_d["values_en"] = ["Oui", "Non"]
+            filter_d["values_en"] = ["Yes", "No"]
+        filters.append(filter_d)
+
 if __name__ == "__main__":
-    generate_app()
-    
+    # generate_app()
+    models = get_filter_model("dataset")
+    generate_model(models, "filter.py")
