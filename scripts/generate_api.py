@@ -155,38 +155,32 @@ def get_filter_model(model_name="dataset"):
                 if rule["reference_table"] != "":
                     py_type = rule["reference_table"].replace("ref_", "").title()+"Enum"+lang.title()
                     external_refs.append(("reference", py_type))
-                    line = f"{field_name}: List[{py_type}] = [{py_type}.option_1]"
                 elif rule["external_model"] != "":
                     external_model_rules = list(DB.rules.find({"model": rule["external_model"]}, {"_id":0, "translation":1}))
                     is_multilang_ext_model = any([r["translation"] for r in external_model_rules])
                     if is_multilang_ext_model:
                         py_type = rule["external_model"].title()+lang.title()
                         external_models.append((rule["external_model"], py_type))
-                        line = f"{field_name}: List[{py_type}] = []"
                     else:
                         py_type = rule["external_model"].title()
                         external_models.append((rule["external_model"], py_type))
-                        line = f"{field_name}: List[{py_type}] = []"
-                else:
-                    line = f"{field_name}: List[{py_type}] = []"
+                line = f"{field_name}: Optional[List[{py_type}]] = []"
             else:
                 if rule["reference_table"] != "":
                     py_type = rule["reference_table"].replace("ref_", "").title()+"Enum"+lang.title()
                     external_refs.append(("reference", py_type))
-                    line = f"{field_name}: List[{py_type}] = [{py_type}.option_1]"   
+                    
                 elif rule["external_model"] != "":
                     external_model_rules = [DB.rules.find({"model": rule["external_model"]})]
                     is_multilang_ext_model = any([r["translation"] for r in external_model_rules])
                     if is_multilang_ext_model:
                         py_type = rule["external_model"].title()+lang.title()
-                        external_models.append((rule["external_model"], py_type))
-                        line = f"{field_name}: {py_type} = None"
+                        
                     else:
                         py_type = rule["external_model"].title()
                         external_models.append((rule["external_model"], py_type))
-                        line = f"{field_name}: {py_type} = None"
-                else:
-                    line = f"{field_name}: Optional[{py_type}] = None"
+                        
+                line = f"{field_name}: Optional[{py_type}] = None"   
             info[model_title].append(line)
     
     external_models = set([n for n in external_models])
@@ -431,4 +425,6 @@ def get_filters():
 if __name__ == "__main__":
     # generate_app()
     models = get_filter_model("dataset")
-    generate_model(models, "filter.py")
+    generate_model(models, "dataset_filter.py")
+    models = get_filter_model("organization")
+    generate_model(models, "organization_filter.py")
