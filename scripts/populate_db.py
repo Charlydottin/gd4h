@@ -50,14 +50,13 @@ def import_datasets(rebuild=False):
 
 def register_dataset_comments():
     dataset = DB.datasets.find_one()
-    comments_fields = {key: 1 for key in dataset if "comment" in key}
+    comments_fields = {"fr."+key: 1 for key in dataset["fr"] if "comment" in key}
     comments_fields["_id"] = 1
     for dataset in DB.datasets.find({}, comments_fields):
         dataset_id = dataset["_id"]
         del dataset["_id"]
         for k, v in dataset.items():
-            for c in v:
-                register_comment(c, "dataset", k, dataset_id)
+            register_comment(v, "dataset", k, dataset_id)
 
 def create_default_users():
     default_users = [
@@ -117,10 +116,12 @@ def create_comment(username, text="Ceci est un commentaire test"):
     return comment
 
 
-def register_comment(comment, perimeter, scope, ref_id):
+def register_comment(comment, perimeter, scope, ref_id, lang="fr"):
+    print(comment)
     comment["perimeter"] = perimeter
     comment["scope"] = scope  # field
     comment["ref_id"] = ref_id
+    comment["lang"] = lang
     DB.comments.insert_one(comment)
 
 
@@ -152,11 +153,12 @@ def create_logs(
 
 
 def init_data():
-    DB.organizations.drop()
-    import_organizations()
-    DB.datasets.drop()
-    import_datasets()
-    #register_dataset_comments()
+    # DB.organizations.drop()
+    # import_organizations()
+    # DB.datasets.drop()
+    # import_datasets()
+    # register_dataset_comments()
+    create_default_users()
 
 
 if __name__ == "__main__":
