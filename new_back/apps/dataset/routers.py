@@ -104,17 +104,20 @@ async def filter_datasets(request:Request, filter:FilterDatasetFr, lang:str="fr"
         if param_k == "organizations":
             final_q = {
                 "nested": {
-                    "path": ",".join(param_k),
+                    "path": param_k,
                     "query": {
                     "match": {
-                        f"{param_k}.name": param_v
+                        f"{param_k}.name": ",".join(param_v)
                        }
                     }
                 }
             }
             # final_q = {"match": {param_k+".name": {"query": ",".join(param_v)}}}
         else:
-            final_q = {"match": {param_k: {"query": ",".join(param_v)}}}
+            if isinstance(param_v, list):
+                final_q = {"match": {param_k: {"query": ",".join(param_v)}}}
+            else:
+                final_q = {"match": {param_k: {"query": param_v}}}
         # highlight = {}
         # results = search_documents(final_q, highlight,model="dataset", lang=lang)
         print(final_q)
@@ -132,11 +135,13 @@ async def filter_datasets(request:Request, filter:FilterDatasetFr, lang:str="fr"
                 }}
                 must.append(nested_q)
             else:
-                must.append({"match":{key:",".join(val)}})
+                if isinstance(val, list):
+                    must.append({"match":{key:",".join(val)}})
+                else:
+                    must.append({"match":{key:val}})
         final_q = {"bool" : { "must":must}}
         print(final_q)
     highlight = {}
-    
     results = search_documents(final_q, highlight, model="dataset", lang=lang)
     results["query"] = req_filter
     if results["count"] == 0:

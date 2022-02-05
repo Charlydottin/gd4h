@@ -54,7 +54,7 @@ def search_documents(query, highlight, model="dataset", lang="fr"):
         result = r["_source"]
         result["_id"] = r["_id"]
         result["score"] = str(round(r["_score"]*10,2))+"%"
-        result["highlight"] = r["highlight"]
+        # result["highlight"] = r["highlight"]
         results.append(result) 
     return {"results": results, "count": result_count}
 
