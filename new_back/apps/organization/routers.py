@@ -7,10 +7,13 @@ from bson.objectid import ObjectId
 from fastapi import APIRouter, Body, Request, HTTPException, status,Query
 from fastapi.responses import JSONResponse
 
+from typing import Optional
+
 
 from bson import json_util
 from .models import (Organization, OrganizationEn, FilterOrganizationFr, FilterOrganizationEn)
-from .services import search_documents, index_document, get_indexed_fieldnames
+from .services import search_documents, index_document, get_indexed_fieldnames 
+from .services import sync_get_filters
 
 router = APIRouter()
 
@@ -29,14 +32,6 @@ async def get_organizations(request: Request, lang:str = "fr"):
         raise HTTPException(status_code=404, detail=f"No Organization found")
     return parse_json(organizations)
 
-@router.get("/{item_id}", response_description="Get one organization")
-async def get_organization(request: Request, item_id: str, lang:str = "fr"):
-    if (organization := await request.app.mongodb["organizations"].find_one({"_id": ObjectId(item_id)})) is not None:
-        doc_id = organization["_id"]
-        doc = organization[lang]
-        doc["_id"] = str(doc_id)
-        return parse_json(doc)
-    raise HTTPException(status_code=404, detail=f"Organization {item_id} not found")
 
 @router.post("/{lang}", response_description="Add an organization")
 async def create_organization(request:Request, organization: Organization = Body(...), lang:str="fr"):   
@@ -52,7 +47,7 @@ async def create_organization(request:Request, organization: Organization = Body
     return JSONResponse(status_code=status.HTTP_201_CREATED, content=created_org)
 
 @router.put("/{item_id}", response_description="Update a organization")
-async def update_organization(request:Request, item_id: str, organization: organization = Body(...), lang:str="fr"):
+async def update_organization(request:Request, item_id: str, organization: Organization = Body(...), lang:str="fr"):
     organization = parse_json(organization)
     stored_organization = {"en":{}, "fr":{}}
     stored_organization[lang] = organization
@@ -93,24 +88,25 @@ async def search_organizations(request:Request, query: Optional[str] = Query(Non
     return results
 
 @router.get("/filters")
-async def get_filters(request:Request, lang: str="fr"):
-    filters = []
-    for facet in await request.app.mongodb["rules"].find({"model": "organization", "is_facet": True},{"slug":1}).to_list(length=100):
-        field_name = facet["slug"]
-        is_controled, is_multiple, is_bool = facet["is_controled"], facet["multiple"], facet["datatype"] == "boolean"
-        filter_d = {
-            "name": field_name, 
-            "is_controled":is_controled, 
-            "is_multiple":is_multiple, 
-            "is_bool": is_bool,
-            "values":[],
-        }
-        if is_controled:
-            filter_d["values"] = request.app.mongodb[facet["reference_table"]].distinct(f"name_{lang}")
-        elif is_bool:
-            filter_d["values"] = [True, False]
-        filters.append(filter_d)
-    return {"filters":filters}
+def get_filters(request:Request, lang: str="fr"):
+    filters = sync_get_filters(lang)
+    # filters = []
+    # for facet in request.app.mongodb["rules"].find({"model": "organization", "is_facet": True}).to_list(length=5):
+    #     filter_d = {
+    #         "name": facet["slug"], 
+    #         "is_controled":facet["is_controled"], 
+    #         "is_multiple":facet["multiple"], 
+    #         "is_bool": facet["datatype"] == "boolean",
+    #         "values":[],
+    #     }
+    #     if facet["is_controled"]:
+    #         filter_d["values"] = request.app.mongodb[facet["reference_table"]].distinct(f"name_{lang}")
+    #     elif facet["datatype"] == "boolean":
+    #         filter_d["values"] = [True, False]
+    #     filters.append(filter_d)
+    # if len(filters) == 0:
+    #     raise HTTPException(status_code=404, detail=f"No Organization found")
+    return parse_json(filters)
 
 @router.post("/filter")
 async def filter_organizations(request:Request, filter:FilterOrganizationFr, lang:str="fr"):
@@ -141,11 +137,12 @@ async def filter_organizations(request:Request, filter:FilterOrganizationFr, lan
         raise HTTPException(status_code=404, detail=f"No organizations found for query={results['query']} not found")        
     return results
 
-@router.post("/search")
-async def filter_search_organization(request:Request,filter:FilterOrganizationFr,query: str = Query(None, min_length=2, max_length=50),lang: str="fr"):
-    search_results = await search_organizations(request, query, lang)
-    # if search_results["count"] == 0:
-    #     raise HTTPException(status_code=404, detail=f"No organizations found for query={query} not found")
-    req_filter = await request.json()
-    print(req_filter)
-    raise NotImplemented
+
+@router.get("/{item_id}", response_description="Get one organization")
+async def get_organization(request: Request, item_id: str, lang:str = "fr"):
+    if (organization := await request.app.mongodb["organizations"].find_one({"_id": ObjectId(item_id)})) is not None:
+        doc_id = organization["_id"]
+        doc = organization[lang]
+        doc["_id"] = str(doc_id)
+        return parse_json(doc)
+    raise HTTPException(status_code=404, detail=f"Organization {item_id} not found")

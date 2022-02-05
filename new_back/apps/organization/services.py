@@ -18,6 +18,21 @@ def get_indexed_fieldnames(model="organization"):
 
 def get_facet_fieldnames(model="organization"):
     return [n["slug"] for n in list(DB.rules.find({"model":model,"is_facet":True}, {"slug":1, "_id":0}))]
+def sync_get_filters(lang):
+    filters = []
+    for facet in DB["rules"].find({"model": "organization", "is_facet": True}):
+        filter_d = {
+                "name": facet["slug"], 
+                "is_controled":facet["is_controled"], 
+                "is_multiple":facet["multiple"], 
+                "is_bool": facet["datatype"] == "boolean"
+            }
+        if facet["is_controled"]:
+            filter_d["values"] = DB[facet["reference_table"]].distinct(f"name_{lang}")
+        elif facet["datatype"] == "boolean":
+            filter_d["values"] = [True, False]
+        filters.append(filter_d)
+    return filters
 
 def index_document(model, doc):
     for lang in LANGS:
