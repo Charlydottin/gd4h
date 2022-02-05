@@ -56,4 +56,20 @@ def search_documents(query, highlight, model="dataset", lang="fr"):
         result["score"] = str(round(r["_score"]*10,2))+"%"
         result["highlight"] = r["highlight"]
         results.append(result) 
-    return {"results": results, "count": result_count, "query": query}
+    return {"results": results, "count": result_count}
+
+def sync_get_filters(lang):
+    filters = []
+    for facet in DB["rules"].find({"model": "organization", "is_facet": True}):
+        filter_d = {
+                "name": facet["slug"], 
+                "is_controled":facet["is_controled"], 
+                "is_multiple":facet["multiple"], 
+                "is_bool": facet["datatype"] == "boolean"
+            }
+        if facet["is_controled"]:
+            filter_d["values"] = DB[facet["reference_table"]].distinct(f"name_{lang}")
+        elif facet["datatype"] == "boolean":
+            filter_d["values"] = [True, False]
+        filters.append(filter_d)
+    return filters

@@ -13,7 +13,7 @@ from .models import Dataset
 from .models import FilterDatasetFr
 from typing import Optional
 from .services import es, index_document, get_indexed_fieldnames, search_documents
-    
+from .services import sync_get_filters    
 router = APIRouter()
 
 def parse_json(data):
@@ -30,16 +30,6 @@ async def get_datasets(request: Request, lang:str = "fr"):
     if len(datasets) == 0:
         raise HTTPException(status_code=404, detail=f"No Datasets found")
     return parse_json(datasets)
-
-@router.get("/{item_id}", response_description="Get one dataset")
-async def get_dataset(request: Request, item_id: str, lang:str = "fr"):
-    if (dataset := await request.app.mongodb["datasets"].find_one({"_id": ObjectId(item_id)})) is not None:
-        doc_id = dataset["_id"]
-        doc = dataset[lang]
-        doc["_id"] = str(doc_id)
-        return parse_json(doc)
-        # return jsonable_encoder(doc)
-    raise HTTPException(status_code=404, detail=f"Dataset {item_id} not found")
 
 @router.post("/", response_description="Add a dataset")
 async def create_dataset(request:Request, dataset: Dataset = Body(...), lang:str="fr"):
@@ -72,7 +62,7 @@ async def update_dataset(request:Request, item_id: str, dataset: Dataset = Body(
     # index_document("dataset", create_dataset)
     # return JSONResponse(status_code=status.HTTP_201_CREATED, content=created_dataset)
     raise NotImplemented
-    
+
 @router.get("/search", response_description="Search for datasets using full_text_query")
 async def search_datasets(request:Request, query: Optional[str] = Query(None, min_length=2, max_length=50), lang:str="fr"):
     #from rules get_indexed_fields()
@@ -93,29 +83,15 @@ async def search_datasets(request:Request, query: Optional[str] = Query(None, mi
         "fields" : {f:{} for f in fields }
         }
     results = search_documents(final_query, highlight, model="dataset", lang=lang)
-    if len(results["count"]) == 0:
+    results["query"] = query
+    if results["count"] == 0:
         raise HTTPException(status_code=404, detail=f"No datasets found for query={results['query']} not found")   
     return results
 
 @router.get("/filters")
 async def get_filters(request:Request, lang: str="fr"):
-    filters = []
-    for facet in await request.app.mongodb["rules"].find({"model": "dataset", "is_facet": True},{"slug":1}).to_list(length=100):
-        field_name = facet["slug"]
-        is_controled, is_multiple, is_bool = facet["is_controled"], facet["multiple"], facet["datatype"] == "boolean"
-        filter_d = {
-            "name": field_name, 
-            "is_controled":is_controled, 
-            "is_multiple":is_multiple, 
-            "is_bool": is_bool,
-            "values":[],
-        }
-        if is_controled:
-            filter_d["values"] = request.app.mongodb[facet["reference_table"]].distinct(f"name_{lang}")
-        elif is_bool:
-            filter_d["values"] = [True, False]
-        filters.append(filter_d)
-    return {"filters":filters}
+    filters = sync_get_filters(lang)
+    return parse_json(filters)
 
 @router.post("/filter")
 async def filter_datasets(request:Request, filter:FilterDatasetFr, lang:str="fr"):
@@ -126,31 +102,47 @@ async def filter_datasets(request:Request, filter:FilterDatasetFr, lang:str="fr"
         param_k = list(req_filter.keys())[0]
         param_v = list(req_filter.values())[0]
         if param_k == "organizations":
-            final_q = {"match": {param_k+".name": {"query": param_v}}}
+            final_q = {
+                "nested": {
+                    "path": param_k,
+                    "query": {
+                    "match": {
+                        f"{param_k}.name": param_v
+                       }
+                    }
+                }
+            }
+            # final_q = {"match": {param_k+".name": {"query": ",".join(param_v)}}}
         else:
             final_q = {"match": {param_k: {"query": param_v}}}
         # highlight = {}
         # results = search_documents(final_q, highlight,model="dataset", lang=lang)
-        
+        print(final_q)
     else:
         must = []
         for key, val in req_filter.items():
             if key == "organizations":
-                must.append({"match":{key+"name":val}})
+                must.append({"match":{key+".name":",".join(val)}})
             else:
                 must.append({"match":{key:val}})
         final_q = {"bool" : { "must":must}}
+        print(final_q)
     highlight = {}
+    
     results = search_documents(final_q, highlight, model="dataset", lang=lang)
+    results["query"] = req_filter
     if results["count"] == 0:
         raise HTTPException(status_code=404, detail=f"No datasets found for query={results['query']} not found")        
     return results
 
-@router.post("/search")
-async def filter_search_dataset(request:Request,filter:FilterDatasetFr,query: str = Query(None, min_length=2, max_length=50),lang: str="fr"):
-    search_results = await search_datasets(request, query, lang)
-    # if search_results["count"] == 0:
-    #     raise HTTPException(status_code=404, detail=f"No datasets found for query={query} not found")
-    req_filter = await request.json()
-    print(req_filter)
-    raise NotImplemented
+
+@router.get("/{item_id}", response_description="Get one dataset")
+async def get_dataset(request: Request, item_id: str, lang:str = "fr"):
+    if (dataset := await request.app.mongodb["datasets"].find_one({"_id": ObjectId(item_id)})) is not None:
+        doc_id = dataset["_id"]
+        doc = dataset[lang]
+        doc["_id"] = str(doc_id)
+        return parse_json(doc)
+        # return jsonable_encoder(doc)
+    raise HTTPException(status_code=404, detail=f"Dataset {item_id} not found")
+

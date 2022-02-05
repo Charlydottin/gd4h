@@ -17,7 +17,7 @@ from apps.reference.models import EnvironmentEnumEn
 from apps.reference.models import Dataset_TypeEnumFr
 
 class FilterDatasetFr(BaseModel):
-    organizations: Optional[List[Organization]] = []
+    organizations: Optional[List[str]] = []
     dataset_type: Optional[Dataset_TypeEnumFr] = None
     environment: Optional[List[EnvironmentEnumFr]] = []
     is_opendata: Optional[bool] = None
