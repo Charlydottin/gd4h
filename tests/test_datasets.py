@@ -1,4 +1,5 @@
 import requests
+import json 
 
 def get_datasets():
     r = requests.get("http://localhost:8000/datasets")
@@ -88,18 +89,63 @@ def search_dataset_001():
     assert response["query"] == "métaux lourds", response["query"]
     assert response["results"][1]['geographical_information_level'] == ['Station de mesure'], response["results"][1]
 def filter_dataset_001():
-    data = {"organizations": ["ANSES"]}
-    r = requests.post("http://localhost:8000/datasets/filter/", data=data)
-    assert r.status_code == 422, r.status_code
-    print(r.json())
+    data = {"organizations": ["ANSES", "BRGM"]}
+    r = requests.post("http://localhost:8000/datasets/filter",data=json.dumps(data))
+    assert r.status_code == 200
+    response = r.json()
+    assert response["count"] == 10
+
 def filter_dataset_002():
     data = {
         "is_opendata": True,
         "downloadable": True,
         "is_geospatial_data": True
     }
-    r = requests.post("http://localhost:8000/datasets/filter/", data=data)
+    r = requests.post("http://localhost:8000/datasets/filter/", data=json.dumps(data))
     assert r.status_code == 200, r.status_code
+    assert r.json()["count"] == 47
+
+def filter_dataset_003():
+    data = {
+        "environment": ["Air", "Eau"],
+    }
+    r = requests.post("http://localhost:8000/datasets/filter/", data=json.dumps(data))
+    assert r.status_code == 200, r.status_code
+    assert r.json()["results"][0]['name'] == "Banque nationale d'Accès aux Données sur les Eaux Souterraines"
+    assert r.json()["count"] == 47
+
+def filter_dataset_004():
+    data = {
+        "environment": ["Pollution", "Eau"],
+    }
+    r = requests.post("http://localhost:8000/datasets/filter/", data=json.dumps(data))
+    assert r.status_code == 422, r.status_code
+    assert r.json()['detail'][0]['msg']== "value is not a valid enumeration member; permitted: 'Air', 'Eau', 'Sols', 'Alimentation'"
+
+def filter_dataset_005():
+    data = {
+        "is_opendata": True,
+        "environment": ["Air", "Eau"],
+        "organizations": ["ANSES"]
+    }
+    r = requests.post("http://localhost:8000/datasets/filter/", data=json.dumps(data))
+    assert r.status_code == 404, r.status_code
+
+def filter_dataset_006():
+    data = {
+        "is_opendata": True,
+        "organizations": ["ANSES"]
+    }
+    r = requests.post("http://localhost:8000/datasets/filter/", data=json.dumps(data))
+    assert r.status_code == 200, r.status_code
+    assert r.json()["count"] == 1, r.json()["count"]
+    assert r.json()["results"][0]["name"] == "Etude de l'Alimentation Totale 2 (EAT)", r.json()["results"][0]["name"]
+
+def get_comment():
+    r = requests.get("http://localhost:8000/comments/")
+    assert r.status_code == 200, r.status_code
+    assert r.json() == 1, r.json()
+
 if __name__ == "__main__":
     get_datasets()
     get_datasets_en()
@@ -114,3 +160,9 @@ if __name__ == "__main__":
     get_dataset_filters_en()
     search_dataset_001()
     filter_dataset_001()
+    filter_dataset_002()
+    filter_dataset_003()
+    filter_dataset_004()
+    filter_dataset_005()
+    filter_dataset_006()
+    get_comment()

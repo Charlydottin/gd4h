@@ -30,7 +30,7 @@ async def get_comment(request: Request, item_id: str):
         return parse_json(comment)
     raise HTTPException(status_code=404, detail=f"comment {item_id} not found")
 
-@router.post("/{lang}", response_description="Add an comment")
+@router.post("/", response_description="Add an comment")
 async def create_comment(request:Request, comment: Comment = Body(...), lang:str="fr"):   
     comment = parse_json(comment)
     # org = {"en":{}, "fr":{}}
