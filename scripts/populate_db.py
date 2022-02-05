@@ -56,7 +56,11 @@ def register_dataset_comments():
         dataset_id = dataset["_id"]
         del dataset["_id"]
         for k, v in dataset.items():
-            register_comment(v, "dataset", k, dataset_id)
+            for c_type, c_value in v.items():
+                print(c_type, c_value)
+                if c_value is not None or c_value != "":
+                    comment_text = {"text":c_value, "user": "admin", "date":datetime.datetime.now()}
+                    register_comment(comment_text, "dataset", c_type, dataset_id)
 
 def create_default_users():
     default_users = [
@@ -158,7 +162,7 @@ def init_data():
     # DB.datasets.drop()
     # import_datasets()
     # register_dataset_comments()
-    create_default_users()
+    # create_default_users()
 
 
 if __name__ == "__main__":
