@@ -18,7 +18,7 @@ from apps.dataset.routers import router as dataset_router
 from apps.organization.routers import router as organization_router
 # from apps.organization.models import Organization
 
-# from apps.reference.routers import router as reference_router
+from apps.reference.routers import router as reference_router
 # from apps.reference.models import Reference
 
 
@@ -54,7 +54,7 @@ async def shutdown_db_client():
 app.include_router(comment_router, tags=["comments"], prefix="/comments")
 app.include_router(dataset_router, tags=["datasets"], prefix="/datasets")
 app.include_router(organization_router, tags=["organizations"], prefix="/organizations")
-# app.include_router(reference_router, tags=["references"], prefix="/references")
+app.include_router(reference_router, tags=["references"], prefix="/references")
 @app.get("/")
 async def root():
     response = RedirectResponse(url='/docs')

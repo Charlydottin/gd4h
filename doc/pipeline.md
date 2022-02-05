@@ -14,21 +14,45 @@ generate_api:
 from rules create model with Jinja2 templating
 
 - generate_routers
-
+use a standard template into data/template/routers.tpl
 https://fastapi-crudrouter.awtkns.com/
+import fastApiCrud router but no way to use a Mongo connector
+except maybe using beanie
+Open endpoints but not connected to DB
 
+So rewrite the routers for datasets organizations but can be generated
 
-- connect db to endpoints
+- [ ] open search and filter methods in datasets
+- [ ] test every endpoints
+- [ ] recreate index
+
 
 ## POPULATE DB
 
 import organizations_fr
-import datasets_fr
+import datasets_fr why are missing 2 datasets?
+
 
 ## CREATE INDEX
 
 - use rules to create index
 - use rules to create filters
+- remove log level set to debug:
+```
+curl -X PUT "localhost:9200/_cluster/settings?pretty" -H 'Content-Type: application/json' -d'
+{
+  "persistent": {
+    "logger.org.elasticsearch.discovery": "DEBUG"
+  }
+}
+'
+```
+
+## CREATE COMMENTS
+
+
+------
+NOTES
 
 ## init_db: from csv to mongodb table
 
