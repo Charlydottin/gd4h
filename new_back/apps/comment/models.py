@@ -8,22 +8,15 @@ from datetime import datetime
 
 
 
-
-
-
-
-
-
-
-
-
 class Comment(BaseModel):
     id: Optional[str] = None
     text: str
-    scope: str
-    user: dict
-    date: datetime
-    
+    scope: Optional[str] = "Field"
+    perimeter: Optional[str] = "dataset"
+    user: str = "admin"
+    date: Optional[datetime] = datetime.now()
+    ref_id: Optional[str]
+
 
 
 
