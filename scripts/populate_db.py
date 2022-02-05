@@ -161,6 +161,7 @@ def init_data():
     # import_organizations()
     # DB.datasets.drop()
     # import_datasets()
+    # DB.comments.drop()
     # register_dataset_comments()
     # create_default_users()
 
