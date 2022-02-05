@@ -104,7 +104,7 @@ async def filter_datasets(request:Request, filter:FilterDatasetFr, lang:str="fr"
         if param_k == "organizations":
             final_q = {
                 "nested": {
-                    "path": param_k,
+                    "path": ",".join(param_k),
                     "query": {
                     "match": {
                         f"{param_k}.name": param_v
@@ -114,7 +114,7 @@ async def filter_datasets(request:Request, filter:FilterDatasetFr, lang:str="fr"
             }
             # final_q = {"match": {param_k+".name": {"query": ",".join(param_v)}}}
         else:
-            final_q = {"match": {param_k: {"query": param_v}}}
+            final_q = {"match": {param_k: {"query": ",".join(param_v)}}}
         # highlight = {}
         # results = search_documents(final_q, highlight,model="dataset", lang=lang)
         print(final_q)
@@ -122,9 +122,17 @@ async def filter_datasets(request:Request, filter:FilterDatasetFr, lang:str="fr"
         must = []
         for key, val in req_filter.items():
             if key == "organizations":
-                must.append({"match":{key+".name":",".join(val)}})
+                nested_q = {"nested": {
+                    "path": key,
+                    "query": {
+                    "match": {
+                        f"{key}.name": ",".join(val)
+                       }
+                    }
+                }}
+                must.append(nested_q)
             else:
-                must.append({"match":{key:val}})
+                must.append({"match":{key:",".join(val)}})
         final_q = {"bool" : { "must":must}}
         print(final_q)
     highlight = {}
