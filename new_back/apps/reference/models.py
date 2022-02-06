@@ -614,12 +614,20 @@ class PerimeterEnumEn(str, Enum):
     option_5="reference"
     option_6="comment"
     
-    
+class ReferenceItem(BaseModel):
+    _id: Optional(str)
+    name_fr: str
+    name_en: str
+    uri: HttpUrl
+    slug: Optional(str)
 
 class Reference(BaseModel):
+    _id: Optional(str)
     name_en: str
     name_fr: str
     uri: Optional[HttpUrl]
-    slug: Optional[str]
-    table_name: str
-    
+    slug: str
+    model: str = "reference"
+    table_name: str 
+    slug : str
+    refs : List(ReferenceItem)
