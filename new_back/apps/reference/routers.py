@@ -30,16 +30,19 @@ async def get_references(request: Request):
         raise HTTPException(status_code=404, detail=f"No reference found")
     return parse_json(references)
 
-@router.get("/{item_id}", response_description="Get one reference")
-async def get_reference(request: Request, item_id: str):
-    if (reference := await request.app.mongodb["references"].find_one({"_id": ObjectId(item_id)})) is not None:
-        return parse_json(reference)
-    raise HTTPException(status_code=404, detail=f"reference {item_id} not found")
+# @router.get("/{item_id}", response_description="Get one reference")
+# async def get_reference(request: Request, item_id: str):
+#     if (reference := await request.app.mongodb["references"].find_one({"_id": ObjectId(item_id)})) is not None:
+#         return parse_json(reference)
+#     raise HTTPException(status_code=404, detail=f"reference {item_id} not found")
 
-@router.get("/{reference_name}/details", response_description="Get values for one reference")
-async def get_reference_values(request: Request, reference_name: str):
+@router.get("/{reference_name}", response_description="Get one reference")
+async def get_reference_values(request: Request, reference_name: str, lang: str="fr"):
     references_values = []
-    for doc in await request.app.mongodb[f"ref_{reference_name}"].find({}, {}).to_list(length=50):
+    for doc in await request.app.mongodb[f"ref_{reference_name}"].find({}, {"uri":1, "slug": 1, f"name_{lang}": 1, "_id":1}).to_list(length=50):
+        doc["value"] = doc[f"name_{lang}"]
+        del doc[f"name_{lang}"]
+        doc["_id"] = str(doc["_id"])
         references_values.append(doc)
     if len(references_values) == 0:
         raise HTTPException(status_code=404, detail=f"No reference for {reference_name} found")
