@@ -88,6 +88,18 @@ def search_dataset_001():
     assert "query" in response
     assert response["query"] == "métaux lourds", response["query"]
     assert response["results"][1]['geographical_information_level'] == ['Station de mesure'], response["results"][1]
+
+def search_dataset_002():
+    r = requests.get("http://localhost:8000/datasets/search?query=bruit%20Grenoble&lang=fr")
+    assert r.status_code == 200, r.status_code
+    response = r.json()
+    assert "count" in response
+    assert "results" in response
+    assert "query" in response
+    assert response["query"] == "bruit Grenoble", response["query"]
+    assert response["results"][0]["description"] == "", response["results"][0]["description"]
+    assert response["results"][0]["name"] == "Mesures de bruit dans l'agglomération de Grenoble", response["results"][0]["name"]
+    
 def filter_dataset_001():
     data = {"organizations": ["ANSES", "BRGM"]}
     r = requests.post("http://localhost:8000/datasets/filter",data=json.dumps(data))
@@ -144,7 +156,7 @@ def filter_dataset_006():
 def get_comment():
     r = requests.get("http://localhost:8000/comments/")
     assert r.status_code == 200, r.status_code
-    assert r.json() == 1, r.json()
+    assert r.json()[0] == {'_id': {'$oid': '61fdddb2b3593e619f4ffd5b'}, 'text': 'Sols', 'user': 'admin', 'date': {'$date': 1644030914925}, 'perimeter': 'dataset', 'scope': 'qualification_comments', 'ref_id': {'$oid': '61fdb1c4c917bd760bc3f99a'}, 'lang': 'fr'}
 
 if __name__ == "__main__":
     get_datasets()
@@ -159,6 +171,7 @@ if __name__ == "__main__":
     get_dataset_filters()
     get_dataset_filters_en()
     search_dataset_001()
+    search_dataset_002()
     filter_dataset_001()
     filter_dataset_002()
     filter_dataset_003()
